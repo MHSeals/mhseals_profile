@@ -1,0 +1,11 @@
+name: test
+on: [push, pull_request]
+jobs:
+  profiles:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {repository: 1unarzDev/astro_dock, ref: main, path: astro_dock}
+      - run: python3 -m pip install --quiet pyyaml
+      - run: ASTRO_DOCK=astro_dock python3 -m unittest discover -s tests -v
