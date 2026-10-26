@@ -70,7 +70,7 @@ A freshly flashed JetPack 6 Jetson (the Orin Nano Super with the ZED 2i on USB) 
 
 ```bash
 git clone --recurse-submodules https://github.com/1unarzDev/astro_dock.git ~/astro_dock && cd ~/astro_dock
-ASTRO_NTP_SERVER=boat ./setup.linux.sh --non-interactive --yes \
+ASTRO_NTP_SERVER=lan ./setup.linux.sh --non-interactive --yes \
   --components clock,docker,gpu,devices,devtools,compose,boat,jetson
 sudo reboot
 ```
@@ -79,7 +79,7 @@ After the reboot, start the dev container (astro_dock's *Image publishing and de
 
 ### Time
 
-Boat devices reach `time.cloudflare.com` through the gateway. Run `ASTRO_NTP_ALLOW=boat ./setup.linux.sh --components clock` on blastoise-odroid (chrony) to serve boat time, also without internet, and `ASTRO_NTP_SERVER=boat ./setup.linux.sh --components clock` on the other boat computers: they prefer it, fall back to public servers away from the boat, and step the clock on the first syncs after boot (the Orin has no battery-backed clock). Without internet on the boat, the ODROID follows `BOAT_OPERATOR_TIME_SERVERS`: run `ASTRO_NTP_ALLOW=operator ./setup.linux.sh --components clock` on an operator laptop that has internet time to serve the boat subnet while it is synchronized. astro_dock's `.devcontainer/astro-clock.py` prints every boat host's offset.
+Boat devices reach `time.cloudflare.com` through the gateway. Run `ASTRO_NTP_ALLOW=lan ./setup.linux.sh --components clock` on blastoise-odroid (chrony) to serve boat time, also without internet, and `ASTRO_NTP_SERVER=lan ./setup.linux.sh --components clock` on the other boat computers: they prefer it, fall back to public servers away from the boat, and step the clock on the first syncs after boot (the Orin has no battery-backed clock). Without internet on the boat, the ODROID follows `BOAT_OPERATOR_TIME_SERVERS`: run `ASTRO_NTP_ALLOW=operator ./setup.linux.sh --components clock` on an operator laptop that has internet time to serve the boat subnet while it is synchronized. astro_dock's `.devcontainer/astro-clock.py` prints every boat host's offset.
 
 ### Gateway
 
