@@ -1,0 +1,8 @@
+# The control station: the role of any operator machine (RTK base, operator heartbeat, the testing TUI,
+# often the gateway that forwards a boat LAN's internet), not one laptop. A machine needs no profile of its
+# own to be one: a vessel registry host with the operator role resolves to it (blastoise's devices.yaml
+# lists tranquility, with its user and address), and an unlisted laptop joins by --host NAME or by an
+# address on a vessel's BOAT_SUBNET that no boat computer holds. The operator key paths are fleet-wide
+# (roboboat/hosts.yaml operator_key, operator_registry).
+extends: roboboat
+kind: station
