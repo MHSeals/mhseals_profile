@@ -5,6 +5,7 @@ profiles/ submodule). Nothing is contacted: hostnames and NICs are faked.
 """
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -71,6 +72,24 @@ class ShippedProfiles(unittest.TestCase):
             self.assertNotIn('\nstation ', run.stdout, run.stderr)
             self.assertIn('a boat computer (address %s belongs to' % address.split('/')[0], run.stdout)
             self.assertIn('vessel    none', run.stdout)
+
+    def test_an_unlisted_laptop_attaches_to_blastoise_and_gets_domain_42_by_lan_subnet_alone(self):
+        """astro_dock reads LAN_SUBNET (BOAT_SUBNET only as a fallback), so dropping BOAT_SUBNET, once
+        mhseals_testing reads LAN_SUBNET, keeps operator laptops on blastoise."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp, 'profiles')
+            shutil.copytree(HERE, root, ignore=shutil.ignore_patterns('.git', 'tests'))
+            env = root / 'blastoise/network.env'
+            env.write_text(''.join(line for line in env.read_text().splitlines(True)
+                                   if not line.startswith('BOAT_SUBNET=')))
+            for profiles in (str(HERE), str(root)):
+                with self.subTest(profiles=profiles):
+                    run = self.hw('whoami', hostname='somelaptop', HW_ADDRS='192.168.0.57/24', ASTRO_PROFILES=profiles)
+                    self.assertIn('station   control_station\n', run.stdout, run.stderr)
+                    self.assertIn('vessel    blastoise (boat LAN 192.168.0.57 in 192.168.0.0/24)', run.stdout)
+                    run = self.hw('env', 'ROS_DOMAIN_ID', hostname='somelaptop', HW_ADDRS='192.168.0.57/24',
+                                  ASTRO_PROFILES=profiles)
+                    self.assertEqual((run.returncode, run.stdout.strip()), (0, '42'), run.stderr)
 
     def test_repos_per_host(self):
         def repos(host):
