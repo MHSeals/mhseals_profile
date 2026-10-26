@@ -17,6 +17,7 @@ HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
 ASTRO = next((Path(p) for p in CANDIDATES if p and (Path(p) / 'devices/profile.py').exists()), None)
 LOADER = ASTRO is not None and "command == 'resolve'" in (ASTRO / 'devices/profile.py').read_text()
+LAN_SUBNET = LOADER and 'LAN_SUBNET' in (ASTRO / 'devices/profile.py').read_text()
 # Permanent MACs of the boat computers (blastoise/network.env STATIC_LEASES).
 MACS = {'blastoise-odroid': '56:e2:03:5c:60:22', 'blastoise-jetson': '3c:6d:66:bf:6b:e2'}
 
@@ -78,12 +79,14 @@ class ShippedProfiles(unittest.TestCase):
         mhseals_testing reads LAN_SUBNET, keeps operator laptops on blastoise."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp, 'profiles')
-            shutil.copytree(HERE, root, ignore=shutil.ignore_patterns('.git', 'tests'))
+            shutil.copytree(HERE, root, ignore=shutil.ignore_patterns('.git', 'tests', 'astro_dock'))
             env = root / 'blastoise/network.env'
             env.write_text(''.join(line for line in env.read_text().splitlines(True)
                                    if not line.startswith('BOAT_SUBNET=')))
             for profiles in (str(HERE), str(root)):
                 with self.subTest(profiles=profiles):
+                    if profiles == str(root) and not LAN_SUBNET:
+                        self.skipTest('this astro_dock reads BOAT_SUBNET only; dropping it needs LAN_SUBNET support')
                     run = self.hw('whoami', hostname='somelaptop', HW_ADDRS='192.168.0.57/24', ASTRO_PROFILES=profiles)
                     self.assertIn('station   control_station\n', run.stdout, run.stderr)
                     self.assertIn('vessel    blastoise (boat LAN 192.168.0.57 in 192.168.0.0/24)', run.stdout)
