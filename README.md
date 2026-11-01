@@ -11,16 +11,18 @@ MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock
 
 ## Use from astro_dock
 
-astro_dock pins this repository as its submodule `profiles/`:
+astro_dock ships no profiles: each machine names this repository as its profile source in `~/.config/astro/profiles.env`, which `hw.sh profile sync` writes and then checks the repository out at astro_dock's `profiles/` (gitignored):
 
 ```bash
-git submodule update --init profiles      # setup's repos stage and hosts apply do this too
-./hw.sh whoami                            # this machine's host and vessel, and how they were found
+./hw.sh profile sync https://github.com/MHSeals/mhseals_profile.git COMMIT   # records URL and ref, checks out
+./hw.sh whoami                            # the source and commit, this machine's host and vessel, and how found
 ```
 
-Another checkout works through `ASTRO_PROFILES=/path/to/mhseals_profile`. Fleet machines find themselves (blastoise-odroid and blastoise-jetson by their `STATIC_LEASES` MAC, tranquility by hostname). A registry host with the `operator` role is a control station, so tranquility resolves to host tranquility, vessel blastoise, station `control_station`. Any other operator laptop joins as a control station without a profile or registry entry: `--host NAME` (or `ASTRO_HOST`), or automatically when one of its addresses is on exactly one vessel's `LAN_SUBNET` (that vessel; `hw.sh whoami` says `boat LAN ADDR in SUBNET`). A boat computer never joins as a station: a Jetson or ODROID (`/proc/device-tree/model`), a leased MAC or a reserved or registry address stays unmatched. Without a vessel, pass `--vessel blastoise` (or export `ASTRO_VESSEL`) for device verbs and `hw.sh env`.
+`profiles.env` holds `ASTRO_PROFILES_URL` and `ASTRO_PROFILES_REF` (a commit, tag or branch; default `main`); copy it to another machine, and its first `hw.sh` command checks the profiles out. `./hw.sh profile sync` alone moves to the recorded ref; sync refuses local changes in `profiles/`, which belong here. A checkout of astro_dock from the submodule era keeps its `profiles/` and needs only the one `profile sync`. Another checkout of this repository works through `ASTRO_PROFILES=/path/to/mhseals_profile` (used as it is, never synced).
 
-A field edit is two commits: change and push the profile here, then bump the `profiles` pointer in astro_dock, so every host deploys one network plan (`./hw.sh hosts apply` moves them all to one astro_dock commit).
+Fleet machines find themselves (blastoise-odroid and blastoise-jetson by their `STATIC_LEASES` MAC, tranquility by hostname). A registry host with the `operator` role is a control station, so tranquility resolves to host tranquility, vessel blastoise, station `control_station`. Any other operator laptop joins as a control station without a profile or registry entry: `--host NAME` (or `ASTRO_HOST`), or automatically when one of its addresses is on exactly one vessel's `LAN_SUBNET` (that vessel; `hw.sh whoami` says `boat LAN ADDR in SUBNET`). A boat computer never joins as a station: a Jetson or ODROID (`/proc/device-tree/model`), a leased MAC or a reserved or registry address stays unmatched. Without a vessel, pass `--vessel blastoise` (or export `ASTRO_VESSEL`) for device verbs and `hw.sh env`.
+
+A field edit is one commit here: push it, `./hw.sh profile sync URL COMMIT` on the operator laptop, then `./hw.sh hosts apply` checks that commit out on every host, so they all deploy one network plan (`./hw.sh hosts verify` compares them).
 
 Credentials are never in either repository. Put the keys of [`roboboat/secrets.keys`](roboboat/secrets.keys) in `~/.config/astro/secrets.env` (mode 600; `ASTRO_SECRETS` overrides) and check with `./hw.sh secrets check`, which prints the missing names, never values. The YAMLs name which key each device reads; empty router passwords are prompted.
 
@@ -70,6 +72,7 @@ A freshly flashed JetPack 6 Jetson (the Orin Nano Super with the ZED 2i on USB) 
 
 ```bash
 git clone --recurse-submodules https://github.com/1unarzDev/astro_dock.git ~/astro_dock && cd ~/astro_dock
+./hw.sh profile sync https://github.com/MHSeals/mhseals_profile.git COMMIT   # or copy profiles.env
 ASTRO_NTP_SERVER=lan ./setup.linux.sh --non-interactive --yes \
   --components clock,docker,gpu,devices,devtools,compose,boat,jetson
 sudo reboot
