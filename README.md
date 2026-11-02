@@ -5,7 +5,7 @@ MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock
 | Directory | Holds |
 | --- | --- |
 | `roboboat/` | the fleet: `profile.yaml`, `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
-| `blastoise/` | vessel, extends roboboat: `network.env` (subnet, router, gateway, DHCP range, reservations, DNS, device addresses), `devices.yaml` (host registry), its radios, lidar MAC and Jetson gateway |
+| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (the lidar's model, MAC and rpm) |
 | `squirtle/` | vessel stub until its values are known (the legacy Xavier NX, JetPack 5 / Foxy) |
 | `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, testing TUI, gateway); no laptop needs its own profile |
 
@@ -78,11 +78,11 @@ ASTRO_NTP_SERVER=lan ./setup.linux.sh --non-interactive --yes \
 sudo reboot
 ```
 
-After the reboot, start the dev container (astro_dock's *Image publishing and deployment*), then run `./setup.linux.sh --components repos`: it clones this host's repositories and builds them inside the dev container. The ZED SDK downloads the camera's factory calibration by serial number on first use (through the gateway) and keeps it in the `zed_settings` volume. Promote a Jetson image with `./hw.sh jetson apply USER@blastoise-jetson`; [`roboboat/jetson.yaml`](roboboat/jetson.yaml) sets the family and the ssh gateway (tranquility; `HW_GATEWAY=` for direct).
+After the reboot, start the dev container (astro_dock's *Image publishing and deployment*), then run `./setup.linux.sh --components repos`: it clones this host's repositories and builds them inside the dev container. The ZED SDK downloads the camera's factory calibration by serial number on first use (through the gateway) and keeps it in the `zed_settings` volume. Promote a Jetson image with `./hw.sh jetson apply USER@blastoise-jetson`; [`roboboat/jetson.yaml`](roboboat/jetson.yaml) sets the family and the ssh hop, the registry host with the `gateway` role (tranquility; `HW_GATEWAY=` for direct).
 
 ### Time
 
-Boat devices reach `time.cloudflare.com` through the gateway. Run `ASTRO_NTP_ALLOW=lan ./setup.linux.sh --components clock` on blastoise-odroid (chrony) to serve boat time, also without internet, and `ASTRO_NTP_SERVER=lan ./setup.linux.sh --components clock` on the other boat computers: they prefer it, fall back to public servers away from the boat, and step the clock on the first syncs after boot (the Orin has no battery-backed clock). Without internet on the boat, the ODROID follows `OPERATOR_TIME_SERVERS`: run `ASTRO_NTP_ALLOW=operator ./setup.linux.sh --components clock` on an operator laptop that has internet time to serve the boat subnet while it is synchronized. astro_dock's `.devcontainer/astro-clock.py` prints every boat host's offset.
+Boat devices reach `time.cloudflare.com` through the gateway. Run `ASTRO_NTP_ALLOW=lan ./setup.linux.sh --components clock` on blastoise-odroid (chrony) to serve boat time, also without internet, and `ASTRO_NTP_SERVER=lan ./setup.linux.sh --components clock` on the other boat computers: they prefer it, fall back to public servers away from the boat, and step the clock on the first syncs after boot (the Orin has no battery-backed clock). The time server is the `time_server` role (blastoise-odroid). Without internet on the boat, it follows the `operator` role's hosts: run `ASTRO_NTP_ALLOW=operator ./setup.linux.sh --components clock` on an operator laptop that has internet time to serve the boat subnet while it is synchronized. astro_dock's `.devcontainer/astro-clock.py` prints every boat host's offset.
 
 ### Gateway
 
@@ -125,7 +125,7 @@ A point-to-point airMAX AC bridge on airOS 8.7.1. Both radios run network mode `
 
 ### Lidar
 
-A Velodyne VLP16 (`VLP-16-A`, firmware 3.0.41.1) with a static address and no login. It sends 2368/8308 UDP by unicast to the host running the driver, blastoise-jetson (.153): about 8 Mbit/s with single returns, twice with `Dual`, and unicast keeps it off the radio link. Addresses are `LIDAR_*` in `blastoise/network.env` (mhseals_nav reads `LIDAR_IP`); ports, RPM, returns, FOV and MAC are in `lidar.yaml`. `./hw.sh lidar` uses its HTTP API:
+A Velodyne VLP16 (`VLP-16-A`, firmware 3.0.41.1) with a static address and no login. It sends 2368/8308 UDP by unicast to the host running the driver, blastoise-jetson (.153): about 8 Mbit/s with single returns, twice with `Dual`, and unicast keeps it off the radio link. Its address is `LIDAR_IP` in `blastoise/network.env` (mhseals_nav reads it) and its data host the `camera_host` role; model, MAC and RPM are vessel facts in `blastoise/profile.yaml` (`lidar:`), ports, returns and FOV in `roboboat/lidar.yaml`. `./hw.sh lidar` uses its HTTP API:
 
 - `status`, `plan` and `verify` are read-only; `verify` exits 3 when a profile value differs. `snapshot` saves settings, status and info to `~/.local/state/astro_dock/lidar/`.
 - `apply` validates, snapshots and after `APPLY` posts only the differing keys, then saves once. Netmask and gateway go last with a reset, which needs DHCP off, and must be active afterwards. It never moves the address. `rollback [SNAPSHOT]` re-applies a snapshot the same way.

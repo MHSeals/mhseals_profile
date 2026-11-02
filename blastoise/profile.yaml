@@ -1,6 +1,8 @@
 # Blastoise: the boat with the DD-WRT router, Orin Nano Super (blastoise-jetson), ODROID (blastoise-odroid),
-# ZED 2i, VLP16, CubeOrange FCU and Ubiquiti radios. Paths are relative to this directory.
+# ZED 2i, VLP16, CubeOrange FCU and Ubiquiti radios. Paths are relative to this directory. Vessel facts only:
+# addresses in network.env, hosts and roles in devices.yaml, device facts here (over roboboat's KIND.yaml).
 extends: roboboat
 kind: vessel
 network_env: network.env
 registry: devices.yaml
+lidar: {model: VLP16, mac: 60:76:88:38:35:85, rpm: 600}   # VLP-16-A, firmware 3.0.41.1
