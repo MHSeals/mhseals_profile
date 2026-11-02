@@ -17,5 +17,6 @@ sources:                        # src/NAME: clone URL, branch (default main); re
   rviz-plugin-zed-od: {url: https://github.com/mhseals/rviz-plugin-zed-od.git}
   zed-ros2-wrapper: {url: https://github.com/stereolabs/zed-ros2-wrapper.git, branch: master}   # the Jetson image bakes its own
 compose_project: astro_dock_devcontainer
+operator_heartbeat: ros2 run mhseals_testing operator_heartbeat   # station take runs it as a station service
 operator_key: mhseals/ssh       # under XDG_CONFIG_HOME: the key and known_hosts the testing TUI uses
 operator_registry: mhseals/devices.yaml   # under XDG_CONFIG_HOME: this computer's `self:` for keys

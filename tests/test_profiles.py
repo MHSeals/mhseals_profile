@@ -122,10 +122,10 @@ class ShippedProfiles(unittest.TestCase):
                     values[name] = (__import__('shlex').split(value) or [''])[0]
                 if kind == 'hosts':
                     added = set(values) - set(expected)
-                    self.assertTrue(all(k.startswith(('HW_SOURCES', 'HW_REPOS_')) for k in added), added)
+                    self.assertTrue(all(k.startswith(('HW_SOURCES', 'HW_REPOS_', 'HW_OPERATOR_HEARTBEAT')) for k in added), added)
                     self.assertEqual(values['HW_REPOS_ALL'], expected.pop('HW_REPOS'))
                     values = {k: v for k, v in values.items() if k not in added}
-                    expected = {**expected, 'HW__KEYS': expected['HW__KEYS'].replace('repos', 'repos sources')}
+                    expected = {**expected, 'HW__KEYS': expected['HW__KEYS'].replace('repos', 'repos sources').replace('compose_project', 'compose_project operator_heartbeat')}
                 self.assertEqual(values, expected)
 
 
