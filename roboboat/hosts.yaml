@@ -5,12 +5,13 @@ repos:                          # per registry role, plus all: a host checks out
   all: [mhseals_hardware, mhseals_nav, mhseals_testing]   # apply fast-forwards them; setup's repos stage clones and builds them
   boat_computer: []
   camera_host: [direct_lidar_inertial_odometry]           # the lidar host
-  operator: [rviz-plugin-zed-od, zed-ros2-wrapper]        # ZED messages for RViz
+  operator: [rviz-plugin-zed-od, zed-ros2-wrapper, mhseals_agents]   # ZED messages for RViz; agent hooks
   gateway: []
 sources:                        # src/NAME: clone URL, branch (default main); repos picks from these
   mhseals_hardware: {url: https://github.com/MHSeals/mhseals_hardware.git}
   mhseals_nav: {url: https://github.com/MHSeals/mhseals_nav.git}
   mhseals_testing: {url: https://github.com/MHSeals/mhseals_testing.git}
+  mhseals_agents: {url: https://github.com/MHSeals/mhseals_agents.git}
   direct_lidar_inertial_odometry:   # optional DLIO odometry of mhseals_nav's odom.launch.py
     {url: https://github.com/vectr-ucla/direct_lidar_inertial_odometry.git, branch: feature/ros2}
   rviz-plugin-zed-od: {url: https://github.com/mhseals/rviz-plugin-zed-od.git}

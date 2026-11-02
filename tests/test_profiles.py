@@ -102,8 +102,9 @@ class ShippedProfiles(unittest.TestCase):
         everyone = ['mhseals_hardware', 'mhseals_nav', 'mhseals_testing']
         self.assertEqual(repos('blastoise-odroid'), everyone)
         self.assertEqual(repos('blastoise-jetson'), everyone + ['direct_lidar_inertial_odometry'])
-        self.assertEqual(repos('tranquility'), everyone + ['rviz-plugin-zed-od', 'zed-ros2-wrapper'])
-        self.assertEqual(repos('somelaptop'), everyone + ['rviz-plugin-zed-od', 'zed-ros2-wrapper'])   # generic
+        station = everyone + ['rviz-plugin-zed-od', 'zed-ros2-wrapper', 'mhseals_agents']
+        self.assertEqual(repos('tranquility'), station)
+        self.assertEqual(repos('somelaptop'), station)   # generic
 
     def test_blastoise_resolves_to_the_values_before_layering(self):
         """Blastoise's kinds equal the pre-layering values (astro_dock tests/data, 2026-10-26), except the
