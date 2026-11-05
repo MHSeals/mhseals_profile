@@ -9,3 +9,6 @@ lidar: {model: VLP16, mac: 60:76:88:38:35:85, rpm: 600}   # VLP-16-A, firmware 3
 # The hull as the TUI draws it (metres): two pontoons 0.23 wide on centrelines 0.66 apart (the URDF's hull links),
 # bridged by the 0.63 long cross-bar deck; length with the thrusters.
 hull: {shape: catamaran, length: 1.34, beam: 0.9, pontoon: 0.23, deck: 0.63}
+# Thruster wiring that differs from mhseals_hardware's defaults, keyed by its config keys; its load_config lays
+# this between default.yaml and the operator file. channel_map: canonical FL, FR, RR, RL -> J2 output.
+thrusters: {channel_map: [1, 3, 2, 4]}

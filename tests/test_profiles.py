@@ -17,10 +17,17 @@ HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
 ASTRO = next((Path(p) for p in CANDIDATES if p and (Path(p) / 'devices/profile.py').exists()), None)
 LOADER = ASTRO is not None and "command == 'resolve'" in (ASTRO / 'devices/profile.py').read_text()
-# Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph).
-FACTS = {'hull'}
+# Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph;
+# thrusters: mhseals_hardware's load_config).
+FACTS = {'hull', 'thrusters'}
 # Permanent MACs of the boat computers (blastoise/network.env STATIC_LEASES).
 MACS = {'blastoise-odroid': '56:e2:03:5c:60:22', 'blastoise-jetson': '3c:6d:66:bf:6b:e2'}
+
+
+class VesselFacts(unittest.TestCase):
+    def test_blastoise_thruster_channel_map_is_a_permutation_of_the_four_outputs(self):
+        profile = yaml.safe_load((HERE / 'blastoise/profile.yaml').read_text())
+        self.assertEqual(sorted(profile['thrusters']['channel_map']), [1, 2, 3, 4])
 
 
 @unittest.skipUnless(LOADER, 'needs an astro_dock checkout with the member loader (set ASTRO_DOCK)')
