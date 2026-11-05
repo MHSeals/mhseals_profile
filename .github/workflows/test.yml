@@ -10,8 +10,8 @@ jobs:
       # The thruster driver's own reader checks thrusters: (ref atlas-fix until mhseals_hardware 36b923b is on main).
       - uses: actions/checkout@v4
         with: {repository: MHSeals/mhseals_hardware, ref: atlas-fix, path: mhseals_hardware}
-      # The testing TUI's own reader checks hull:.
+      # The testing TUI's own reader checks hull: (ref atlas-fix until mhseals_testing 200a3de7 is on main).
       - uses: actions/checkout@v4
-        with: {repository: MHSeals/mhseals_testing, path: mhseals_testing}
+        with: {repository: MHSeals/mhseals_testing, ref: atlas-fix, path: mhseals_testing}
       - run: python3 -m pip install --quiet pyyaml numpy
       - run: ASTRO_DOCK=astro_dock PYTHONPATH=mhseals_hardware:mhseals_testing REQUIRE_HARDWARE=1 REQUIRE_TESTING=1 python3 -m unittest discover -s tests -v
