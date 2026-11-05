@@ -9,8 +9,14 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 
 import yaml
+
+try:
+    from mhseals_hardware import configuration, vessel     # the thruster driver's own reader (ROS-free)
+except ImportError:
+    configuration = None
 
 HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
@@ -108,6 +114,23 @@ class ShippedProfiles(unittest.TestCase):
         hop = subprocess.run(['python3', '-I', str(ASTRO / 'devices/profile.py'), 'hosts',
                               str(HERE / 'blastoise/devices.yaml'), 'gateway'], capture_output=True, text=True)
         self.assertEqual(hop.stdout, 'tranquility\n', hop.stderr)
+
+
+@unittest.skipUnless(configuration, 'needs mhseals_hardware on PYTHONPATH')
+class ThrusterWiring(unittest.TestCase):
+    def test_every_vessel_loads_with_the_thruster_drivers_strict_reader(self):
+        """Duplicate keys, a non-wiring key or a bad channel_map refuse here, not first on the boat."""
+        with tempfile.NamedTemporaryFile('w', suffix='.yaml') as empty:
+            empty.write('{}\n')
+            empty.flush()
+            for env in sorted(HERE.glob('*/network.env')):
+                with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
+                        os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
+                    vessel.section.cache_clear()
+                    config = configuration.load_config(empty.name)
+                    if env.parent.name == 'blastoise':
+                        self.assertEqual(config['channel_map'], [1, 3, 2, 4])
+        vessel.section.cache_clear()
 
 
 if __name__ == '__main__':
