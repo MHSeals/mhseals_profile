@@ -1,5 +1,5 @@
-"""What astro_dock resolves from these profiles, per machine: whoami, the vessel's network env and ROS
-domain, the repositories, every member's merged profile (without FACTS) and every vessel kind's driver values.
+"""What astro_dock resolves from these profiles, per machine: whoami, the vessel's network env path and
+ROS domain, the repositories, every member's merged profile (without FACTS) and every vessel kind's driver values.
 
 `python3 tests/resolved.py ASTRO tests/data/resolved-baseline.json` records them with the astro_dock
 checkout ASTRO, which finds the profiles itself (its profiles/ checkout); test_resolved compares against the
@@ -9,6 +9,7 @@ Nothing is contacted: hostnames, NICs and addresses are faked.
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -17,14 +18,19 @@ import tempfile
 import yaml
 
 # Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph;
-# thrusters: mhseals_hardware's load_config). astro_dock only echoes them, so the record leaves them out and
-# their readers' tests check them.
+# thrusters: mhseals_hardware's load_config). astro_dock only echoes them, so the record leaves them out;
+# test_profiles' ThrusterWiring and HullShape load them with those readers.
 FACTS = {'hull', 'thrusters'}
+
+# The boat computers' permanent MACs, from their reservations (STATIC_LEASES: MAC=hostname=address ...).
+LEASES = re.search(r'^STATIC_LEASES="([^"]*)"', (Path(__file__).resolve().parents[1] / 'blastoise/network.env')
+                   .read_text(), re.M).group(1)
+MAC = {host: mac for mac, host, _ in (lease.split('=') for lease in LEASES.split())}
 
 # name: (hw.sh global flags, fake hostname, permanent MAC or None, local addresses)
 MACHINES = {
-    'blastoise-odroid': ((), 'roboboat', '56:e2:03:5c:60:22', ''),     # in its container: MAC only
-    'blastoise-jetson': ((), 'roboboat', '3c:6d:66:bf:6b:e2', ''),
+    'blastoise-odroid': ((), 'roboboat', MAC['blastoise-odroid'], ''),     # in its container: MAC only
+    'blastoise-jetson': ((), 'roboboat', MAC['blastoise-jetson'], ''),
     'tranquility': ((), 'tranquility', None, ''),
     'laptop-on-lan': ((), 'somelaptop', None, '192.168.0.57/24'),
     'laptop-off-lan': ((), 'somelaptop', None, ''),
@@ -76,7 +82,6 @@ def resolved(astro, extra=None):
             entry = {'whoami': {k: norm(v) for k, v in fields.items()}}
             rc, path = hw(machine, 'env')
             entry['env'] = norm(path.strip()) if rc == 0 else None
-            entry['network'] = Path(path.strip()).read_text() if rc == 0 else None
             rc, domain = hw(machine, 'env', 'ROS_DOMAIN_ID')
             entry['ros_domain'] = domain.strip() if rc == 0 else None
             rc, repos = hw(machine, 'hosts', 'repos')

@@ -1,7 +1,6 @@
 {
  "blastoise-jetson": {
   "env": "<root>/blastoise/network.env",
-  "network": "# Blastoise LAN addresses: the network env of this profile (its YAMLs and roboboat's read these as $KEY),\n# also read through `hw.sh env` / ASTRO_NETWORK_ENV by astro_dock (setup, dev.bashrc), mhseals_nav and mhseals_testing.\n# Addresses only: who does what is a role in devices.yaml, read as $<ROLE>_IP (the time server, the\n# boat computer, the lidar's data host). The router serves DHCP and Wi-Fi; the gateway device (any Linux\n# host running the gateway stage) forwards the LAN's internet through its own routing, WARP included.\nLAN_SUBNET=192.168.0.0/24\n# The vessel's ROS domain: astro_dock's prebuild sets the dev container's ROS_DOMAIN_ID from it.\nROS_DOMAIN_ID=42\nNETMASK=255.255.255.0\nROUTER_IP=192.168.0.1\nGATEWAY_IP=192.168.0.2\nDHCP_START=100\nDHCP_COUNT=50\n# Reservations sit above the pool (.100-.149): MAC=hostname=address.\nSTATIC_LEASES=\"56:e2:03:5c:60:22=blastoise-odroid=192.168.0.152 3c:6d:66:bf:6b:e2=blastoise-jetson=192.168.0.153\"\nDNS_PRIMARY=1.1.1.1\nDNS_SECONDARY=8.8.8.8\n# Ubiquiti airMAX radios, bridged onto this LAN (settings: roboboat/radio.yaml, blastoise/radio.yaml).\nUBNT_ROCKET_IP=192.168.0.22\nUBNT_BULLET_IP=192.168.0.21\n# Velodyne VLP16 (settings: roboboat/lidar.yaml, profile.yaml lidar; mhseals_nav reads LIDAR_IP).\n# Static on the sensor (factory 192.168.1.201; netmask NETMASK, gateway ROUTER_IP); apply never moves this address.\nLIDAR_IP=192.168.0.201\n",
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
@@ -20,7 +19,6 @@
  },
  "blastoise-odroid": {
   "env": "<root>/blastoise/network.env",
-  "network": "# Blastoise LAN addresses: the network env of this profile (its YAMLs and roboboat's read these as $KEY),\n# also read through `hw.sh env` / ASTRO_NETWORK_ENV by astro_dock (setup, dev.bashrc), mhseals_nav and mhseals_testing.\n# Addresses only: who does what is a role in devices.yaml, read as $<ROLE>_IP (the time server, the\n# boat computer, the lidar's data host). The router serves DHCP and Wi-Fi; the gateway device (any Linux\n# host running the gateway stage) forwards the LAN's internet through its own routing, WARP included.\nLAN_SUBNET=192.168.0.0/24\n# The vessel's ROS domain: astro_dock's prebuild sets the dev container's ROS_DOMAIN_ID from it.\nROS_DOMAIN_ID=42\nNETMASK=255.255.255.0\nROUTER_IP=192.168.0.1\nGATEWAY_IP=192.168.0.2\nDHCP_START=100\nDHCP_COUNT=50\n# Reservations sit above the pool (.100-.149): MAC=hostname=address.\nSTATIC_LEASES=\"56:e2:03:5c:60:22=blastoise-odroid=192.168.0.152 3c:6d:66:bf:6b:e2=blastoise-jetson=192.168.0.153\"\nDNS_PRIMARY=1.1.1.1\nDNS_SECONDARY=8.8.8.8\n# Ubiquiti airMAX radios, bridged onto this LAN (settings: roboboat/radio.yaml, blastoise/radio.yaml).\nUBNT_ROCKET_IP=192.168.0.22\nUBNT_BULLET_IP=192.168.0.21\n# Velodyne VLP16 (settings: roboboat/lidar.yaml, profile.yaml lidar; mhseals_nav reads LIDAR_IP).\n# Static on the sensor (factory 192.168.1.201; netmask NETMASK, gateway ROUTER_IP); apply never moves this address.\nLIDAR_IP=192.168.0.201\n",
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
@@ -195,7 +193,6 @@
  },
  "laptop-host-blastoise": {
   "env": "<root>/blastoise/network.env",
-  "network": "# Blastoise LAN addresses: the network env of this profile (its YAMLs and roboboat's read these as $KEY),\n# also read through `hw.sh env` / ASTRO_NETWORK_ENV by astro_dock (setup, dev.bashrc), mhseals_nav and mhseals_testing.\n# Addresses only: who does what is a role in devices.yaml, read as $<ROLE>_IP (the time server, the\n# boat computer, the lidar's data host). The router serves DHCP and Wi-Fi; the gateway device (any Linux\n# host running the gateway stage) forwards the LAN's internet through its own routing, WARP included.\nLAN_SUBNET=192.168.0.0/24\n# The vessel's ROS domain: astro_dock's prebuild sets the dev container's ROS_DOMAIN_ID from it.\nROS_DOMAIN_ID=42\nNETMASK=255.255.255.0\nROUTER_IP=192.168.0.1\nGATEWAY_IP=192.168.0.2\nDHCP_START=100\nDHCP_COUNT=50\n# Reservations sit above the pool (.100-.149): MAC=hostname=address.\nSTATIC_LEASES=\"56:e2:03:5c:60:22=blastoise-odroid=192.168.0.152 3c:6d:66:bf:6b:e2=blastoise-jetson=192.168.0.153\"\nDNS_PRIMARY=1.1.1.1\nDNS_SECONDARY=8.8.8.8\n# Ubiquiti airMAX radios, bridged onto this LAN (settings: roboboat/radio.yaml, blastoise/radio.yaml).\nUBNT_ROCKET_IP=192.168.0.22\nUBNT_BULLET_IP=192.168.0.21\n# Velodyne VLP16 (settings: roboboat/lidar.yaml, profile.yaml lidar; mhseals_nav reads LIDAR_IP).\n# Static on the sensor (factory 192.168.1.201; netmask NETMASK, gateway ROUTER_IP); apply never moves this address.\nLIDAR_IP=192.168.0.201\n",
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
@@ -217,7 +214,6 @@
  },
  "laptop-off-lan": {
   "env": null,
-  "network": null,
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
@@ -233,7 +229,6 @@
  },
  "laptop-on-lan": {
   "env": "<root>/blastoise/network.env",
-  "network": "# Blastoise LAN addresses: the network env of this profile (its YAMLs and roboboat's read these as $KEY),\n# also read through `hw.sh env` / ASTRO_NETWORK_ENV by astro_dock (setup, dev.bashrc), mhseals_nav and mhseals_testing.\n# Addresses only: who does what is a role in devices.yaml, read as $<ROLE>_IP (the time server, the\n# boat computer, the lidar's data host). The router serves DHCP and Wi-Fi; the gateway device (any Linux\n# host running the gateway stage) forwards the LAN's internet through its own routing, WARP included.\nLAN_SUBNET=192.168.0.0/24\n# The vessel's ROS domain: astro_dock's prebuild sets the dev container's ROS_DOMAIN_ID from it.\nROS_DOMAIN_ID=42\nNETMASK=255.255.255.0\nROUTER_IP=192.168.0.1\nGATEWAY_IP=192.168.0.2\nDHCP_START=100\nDHCP_COUNT=50\n# Reservations sit above the pool (.100-.149): MAC=hostname=address.\nSTATIC_LEASES=\"56:e2:03:5c:60:22=blastoise-odroid=192.168.0.152 3c:6d:66:bf:6b:e2=blastoise-jetson=192.168.0.153\"\nDNS_PRIMARY=1.1.1.1\nDNS_SECONDARY=8.8.8.8\n# Ubiquiti airMAX radios, bridged onto this LAN (settings: roboboat/radio.yaml, blastoise/radio.yaml).\nUBNT_ROCKET_IP=192.168.0.22\nUBNT_BULLET_IP=192.168.0.21\n# Velodyne VLP16 (settings: roboboat/lidar.yaml, profile.yaml lidar; mhseals_nav reads LIDAR_IP).\n# Static on the sensor (factory 192.168.1.201; netmask NETMASK, gateway ROUTER_IP); apply never moves this address.\nLIDAR_IP=192.168.0.201\n",
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
@@ -255,7 +250,6 @@
  },
  "laptop-squirtle": {
   "env": null,
-  "network": null,
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
@@ -279,7 +273,6 @@
  },
  "tranquility": {
   "env": "<root>/blastoise/network.env",
-  "network": "# Blastoise LAN addresses: the network env of this profile (its YAMLs and roboboat's read these as $KEY),\n# also read through `hw.sh env` / ASTRO_NETWORK_ENV by astro_dock (setup, dev.bashrc), mhseals_nav and mhseals_testing.\n# Addresses only: who does what is a role in devices.yaml, read as $<ROLE>_IP (the time server, the\n# boat computer, the lidar's data host). The router serves DHCP and Wi-Fi; the gateway device (any Linux\n# host running the gateway stage) forwards the LAN's internet through its own routing, WARP included.\nLAN_SUBNET=192.168.0.0/24\n# The vessel's ROS domain: astro_dock's prebuild sets the dev container's ROS_DOMAIN_ID from it.\nROS_DOMAIN_ID=42\nNETMASK=255.255.255.0\nROUTER_IP=192.168.0.1\nGATEWAY_IP=192.168.0.2\nDHCP_START=100\nDHCP_COUNT=50\n# Reservations sit above the pool (.100-.149): MAC=hostname=address.\nSTATIC_LEASES=\"56:e2:03:5c:60:22=blastoise-odroid=192.168.0.152 3c:6d:66:bf:6b:e2=blastoise-jetson=192.168.0.153\"\nDNS_PRIMARY=1.1.1.1\nDNS_SECONDARY=8.8.8.8\n# Ubiquiti airMAX radios, bridged onto this LAN (settings: roboboat/radio.yaml, blastoise/radio.yaml).\nUBNT_ROCKET_IP=192.168.0.22\nUBNT_BULLET_IP=192.168.0.21\n# Velodyne VLP16 (settings: roboboat/lidar.yaml, profile.yaml lidar; mhseals_nav reads LIDAR_IP).\n# Static on the sensor (factory 192.168.1.201; netmask NETMASK, gateway ROUTER_IP); apply never moves this address.\nLIDAR_IP=192.168.0.201\n",
   "repos": [
    "mhseals_hardware https://github.com/MHSeals/mhseals_hardware.git main",
    "mhseals_nav https://github.com/MHSeals/mhseals_nav.git main",
