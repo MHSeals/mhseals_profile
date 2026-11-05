@@ -13,6 +13,8 @@ import unittest.mock
 
 import yaml
 
+from resolved import FACTS
+
 try:
     from mhseals_hardware import configuration, vessel     # the thruster driver's own reader (ROS-free)
 except ImportError:
@@ -22,9 +24,6 @@ HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
 ASTRO = next((Path(p) for p in CANDIDATES if p and (Path(p) / 'devices/profile.py').exists()), None)
 LOADER = ASTRO is not None and "command == 'resolve'" in (ASTRO / 'devices/profile.py').read_text()
-# Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph;
-# thrusters: mhseals_hardware's load_config).
-FACTS = {'hull', 'thrusters'}
 # Permanent MACs of the boat computers (blastoise/network.env STATIC_LEASES).
 MACS = {'blastoise-odroid': '56:e2:03:5c:60:22', 'blastoise-jetson': '3c:6d:66:bf:6b:e2'}
 

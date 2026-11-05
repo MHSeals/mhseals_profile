@@ -1,5 +1,5 @@
 """What astro_dock resolves from these profiles, per machine: whoami, the vessel's network env and ROS
-domain, the repositories, every member's merged profile and every vessel kind's driver values.
+domain, the repositories, every member's merged profile (without FACTS) and every vessel kind's driver values.
 
 `python3 tests/resolved.py ASTRO tests/data/resolved-baseline.json` records them with the astro_dock
 checkout ASTRO, which finds the profiles itself (its profiles/ checkout); test_resolved compares against the
@@ -13,6 +13,13 @@ import shlex
 import subprocess
 import sys
 import tempfile
+
+import yaml
+
+# Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph;
+# thrusters: mhseals_hardware's load_config). astro_dock only echoes them, so the record leaves them out and
+# their readers' tests check them.
+FACTS = {'hull', 'thrusters'}
 
 # name: (hw.sh global flags, fake hostname, permanent MAC or None, local addresses)
 MACHINES = {
@@ -76,7 +83,10 @@ def resolved(astro, extra=None):
             entry['repos'] = repos.split('\n') if rc == 0 else None
             out[machine] = entry
         members = sorted(p.parent.name for p in Path(root).glob('*/profile.yaml'))
-        out['members'] = {m: norm(hw('laptop-off-lan', 'profile', 'show', m)[1]) for m in members}
+        out['members'] = {}
+        for m in members:
+            shown = yaml.safe_load(norm(hw('laptop-off-lan', 'profile', 'show', m)[1]))
+            out['members'][m] = yaml.safe_dump({k: v for k, v in shown.items() if k not in FACTS}, sort_keys=False)
         kinds = {}
         for vessel in members:
             if 'kind: vessel' not in Path(root, vessel, 'profile.yaml').read_text():
