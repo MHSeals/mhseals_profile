@@ -5,7 +5,7 @@ MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock
 | Directory | Holds |
 | --- | --- |
 | `roboboat/` | the fleet: `profile.yaml`, `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
-| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` the testing TUI draws, and the `thrusters:` wiring mhseals_hardware reads) |
+| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` the testing TUI draws, and the `thrusters:` wiring mhseals_hardware reads; tests load both with those readers) |
 | `squirtle/` | vessel stub until its values are known (the legacy Xavier NX, JetPack 5 / Foxy) |
 | `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, testing TUI, gateway); no laptop needs its own profile |
 
@@ -22,7 +22,7 @@ astro_dock ships no profiles: each machine names this repository as its profile 
 
 Fleet machines find themselves (blastoise-odroid and blastoise-jetson by their `STATIC_LEASES` MAC, tranquility by hostname). A registry host with the `operator` role is a control station, so tranquility resolves to host tranquility, vessel blastoise, station `control_station`. Any other operator laptop joins as a control station without a profile or registry entry: `--host NAME` (or `ASTRO_HOST`), or automatically when one of its addresses is on exactly one vessel's `LAN_SUBNET` (that vessel; `hw.sh whoami` says `boat LAN ADDR in SUBNET`). A boat computer never joins as a station: a Jetson or ODROID (`/proc/device-tree/model`), a leased MAC or a reserved or registry address stays unmatched. Without a vessel, pass `--vessel blastoise` (or export `ASTRO_VESSEL`) for device verbs and `hw.sh env`.
 
-A field edit is one commit here: push it, `./hw.sh profile sync URL COMMIT` on the operator laptop, then `./hw.sh hosts apply` checks that commit out on every host, so they all deploy one network plan (`./hw.sh hosts verify` compares them).
+A field edit is one commit here (when a resolved value changes on purpose, regenerate `tests/data/resolved-baseline.json` with `tests/resolved.py` in the same commit): push it, `./hw.sh profile sync URL COMMIT` on the operator laptop, then `./hw.sh hosts apply` checks that commit out on every host, so they all deploy one network plan (`./hw.sh hosts verify` compares them).
 
 Credentials are never in either repository. Put the keys of [`roboboat/secrets.keys`](roboboat/secrets.keys) in `~/.config/astro/secrets.env` (mode 600; `ASTRO_SECRETS` overrides) and check with `./hw.sh secrets check`, which prints the missing names, never values. The YAMLs name which key each device reads; empty router passwords are prompted.
 

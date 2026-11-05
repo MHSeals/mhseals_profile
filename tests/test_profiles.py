@@ -3,6 +3,8 @@
 ASTRO_DOCK is an astro_dock checkout (default: ../astro_dock, or the parent when this repo is its
 profiles/ submodule). Nothing is contacted: hostnames and NICs are faked.
 """
+import importlib
+import importlib.util
 import os
 import shutil
 from pathlib import Path
@@ -13,19 +15,19 @@ import unittest.mock
 
 import yaml
 
-from resolved import FACTS
+from resolved import FACTS, MACHINES
 
 try:
     from mhseals_hardware import configuration, vessel     # the thruster driver's own reader (ROS-free)
 except ImportError:
     configuration = None
+TESTING = importlib.util.find_spec('mhseals_testing') is not None    # the TUI's hull: reader (needs numpy)
 
 HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
 ASTRO = next((Path(p) for p in CANDIDATES if p and (Path(p) / 'devices/profile.py').exists()), None)
 LOADER = ASTRO is not None and "command == 'resolve'" in (ASTRO / 'devices/profile.py').read_text()
-# Permanent MACs of the boat computers (blastoise/network.env STATIC_LEASES).
-MACS = {'blastoise-odroid': '56:e2:03:5c:60:22', 'blastoise-jetson': '3c:6d:66:bf:6b:e2'}
+MACS = {name: machine[2] for name, machine in MACHINES.items() if machine[2]}   # the boat computers
 
 
 @unittest.skipUnless(LOADER, 'needs an astro_dock checkout with the member loader (set ASTRO_DOCK)')
@@ -131,6 +133,26 @@ class ThrusterWiring(unittest.TestCase):
                     wiring = yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('thrusters')
                     if wiring and 'channel_map' in wiring:
                         self.assertEqual(config['channel_map'], wiring['channel_map'])
+        vessel.section.cache_clear()
+
+
+@unittest.skipUnless(TESTING or os.environ.get('REQUIRE_TESTING'), 'needs mhseals_testing on PYTHONPATH')
+class HullShape(unittest.TestCase):
+    def test_every_vessels_hull_loads_with_the_tuis_reader(self):
+        """A bad hull: (unknown shape or key) stops the testing TUI at import, so it refuses here first."""
+        self.assertTrue(TESTING, 'REQUIRE_TESTING is set but mhseals_testing is not on PYTHONPATH')
+        from mhseals_hardware import vessel
+        hull = None
+        for env in sorted(HERE.glob('*/network.env')):
+            with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
+                    os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
+                vessel.section.cache_clear()
+                hull = hull or importlib.import_module('mhseals_testing.ui.minimap.hull')
+                shape = (yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('hull') or {}).get('shape')
+                if shape:
+                    self.assertEqual(hull._settings()['shape'], shape)
+                else:
+                    hull._settings()
         vessel.section.cache_clear()
 
 
