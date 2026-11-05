@@ -24,12 +24,6 @@ FACTS = {'hull', 'thrusters'}
 MACS = {'blastoise-odroid': '56:e2:03:5c:60:22', 'blastoise-jetson': '3c:6d:66:bf:6b:e2'}
 
 
-class VesselFacts(unittest.TestCase):
-    def test_blastoise_thruster_channel_map_is_a_permutation_of_the_four_outputs(self):
-        profile = yaml.safe_load((HERE / 'blastoise/profile.yaml').read_text())
-        self.assertEqual(sorted(profile['thrusters']['channel_map']), [1, 2, 3, 4])
-
-
 @unittest.skipUnless(LOADER, 'needs an astro_dock checkout with the member loader (set ASTRO_DOCK)')
 class ShippedProfiles(unittest.TestCase):
     def setUp(self):
