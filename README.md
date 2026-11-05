@@ -144,7 +144,7 @@ Check `ros2 topic hz /points` and `ros2 topic echo /map --once`; see the [mhseal
 
 ### Thrusters
 
-The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, e.g. `channel_map`) is a vessel fact: change it with a commit here. The operator file `~/.config/mhseals/hardware.yaml` only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: mhseals_hardware README, Configuration.
+The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and `reversed` only; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: mhseals_hardware README, Configuration.
 
 ## Fleet procedures
 
