@@ -1,8 +1,9 @@
 """What astro_dock resolves from these profiles, per machine: whoami, the vessel's network env and ROS
 domain, the repositories, every member's merged profile and every vessel kind's driver values.
 
-`python3 tests/resolved.py ASTRO OUT.json` records them with the astro_dock checkout ASTRO, which finds
-the profiles itself (its profiles/ checkout); test_profiles compares a later astro_dock against the record.
+`python3 tests/resolved.py ASTRO tests/data/resolved-baseline.json` records them with the astro_dock
+checkout ASTRO, which finds the profiles itself (its profiles/ checkout); test_resolved compares against the
+record. Regenerate it when a profile changes on purpose and review the diff.
 Nothing is contacted: hostnames, NICs and addresses are faked.
 """
 import json

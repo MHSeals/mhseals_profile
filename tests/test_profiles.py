@@ -3,7 +3,6 @@
 ASTRO_DOCK is an astro_dock checkout (default: ../astro_dock, or the parent when this repo is its
 profiles/ submodule). Nothing is contacted: hostnames and NICs are faked.
 """
-import json
 import os
 import shutil
 from pathlib import Path
@@ -104,36 +103,11 @@ class ShippedProfiles(unittest.TestCase):
         self.assertEqual(repos('tranquility'), station)
         self.assertEqual(repos('somelaptop'), station)   # generic
 
-    def test_blastoise_resolves_to_the_values_before_layering(self):
-        """Blastoise's kinds equal the pre-layering values (astro_dock tests/data, 2026-10-26), except the
-        repos list, which became repos.all plus per-role lists, the Jetson's ssh hop, now the host with the
-        gateway role, and the lidar's model, a new vessel fact."""
+    def test_the_gateway_role_is_tranquility(self):
+        """The Jetson's ssh hop is the `gateway` role (resolved-baseline.json); here that is tranquility."""
         hop = subprocess.run(['python3', '-I', str(ASTRO / 'devices/profile.py'), 'hosts',
                               str(HERE / 'blastoise/devices.yaml'), 'gateway'], capture_output=True, text=True)
         self.assertEqual(hop.stdout, 'tranquility\n', hop.stderr)
-        baseline = json.loads((HERE / 'tests/data/blastoise-baseline.json').read_text())
-        for kind, expected in baseline.items():
-            with self.subTest(kind=kind):
-                run = subprocess.run(['python3', '-I', str(ASTRO / 'devices/profile.py'), 'kind',
-                                      str(HERE / 'blastoise'), kind, str(HERE / 'blastoise/network.env')],
-                                     capture_output=True, text=True, env={'PATH': os.environ['PATH']})
-                self.assertEqual(run.returncode, 0, run.stderr)
-                values = {}
-                for line in run.stdout.splitlines():
-                    name, _, value = line.split(' || ', 1)[1].partition('=')
-                    values[name] = (__import__('shlex').split(value) or [''])[0]
-                if kind == 'hosts':
-                    added = set(values) - set(expected)
-                    self.assertTrue(all(k.startswith(('HW_SOURCES', 'HW_REPOS_', 'HW_OPERATOR_HEARTBEAT')) for k in added), added)
-                    self.assertEqual(values['HW_REPOS_ALL'], expected.pop('HW_REPOS'))
-                    values = {k: v for k, v in values.items() if k not in added}
-                    expected = {**expected, 'HW__KEYS': expected['HW__KEYS'].replace('repos', 'repos sources').replace('compose_project', 'compose_project operator_heartbeat')}
-                if kind == 'jetson':
-                    expected['HW_GATEWAY'] = 'gateway'                          # a role: tranquility (above)
-                if kind == 'lidar':
-                    self.assertEqual(values.pop('HW_MODEL'), 'VLP16')
-                    self.assertEqual(set(values.pop('HW__KEYS').split()), set(expected.pop('HW__KEYS').split()) | {'model'})
-                self.assertEqual(values, expected)
 
 
 if __name__ == '__main__':
