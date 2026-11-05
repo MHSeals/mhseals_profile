@@ -3,24 +3,31 @@
 ASTRO_DOCK is an astro_dock checkout (default: ../astro_dock, or the parent when this repo is its
 profiles/ submodule). Nothing is contacted: hostnames and NICs are faked.
 """
-import json
+import importlib
+import importlib.util
 import os
 import shutil
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 
 import yaml
+
+from resolved import FACTS, MACHINES
+
+try:
+    from mhseals_hardware import configuration, vessel     # the thruster driver's own reader (ROS-free)
+except ImportError:
+    configuration = None
+TESTING = importlib.util.find_spec('mhseals_testing') is not None    # the TUI's hull: reader (needs numpy)
 
 HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
 ASTRO = next((Path(p) for p in CANDIDATES if p and (Path(p) / 'devices/profile.py').exists()), None)
 LOADER = ASTRO is not None and "command == 'resolve'" in (ASTRO / 'devices/profile.py').read_text()
-# Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph).
-FACTS = {'hull'}
-# Permanent MACs of the boat computers (blastoise/network.env STATIC_LEASES).
-MACS = {'blastoise-odroid': '56:e2:03:5c:60:22', 'blastoise-jetson': '3c:6d:66:bf:6b:e2'}
+MACS = {name: machine[2] for name, machine in MACHINES.items() if machine[2]}   # the boat computers
 
 
 @unittest.skipUnless(LOADER, 'needs an astro_dock checkout with the member loader (set ASTRO_DOCK)')
@@ -103,36 +110,50 @@ class ShippedProfiles(unittest.TestCase):
         self.assertEqual(repos('tranquility'), station)
         self.assertEqual(repos('somelaptop'), station)   # generic
 
-    def test_blastoise_resolves_to_the_values_before_layering(self):
-        """Blastoise's kinds equal the pre-layering values (astro_dock tests/data, 2026-10-26), except the
-        repos list, which became repos.all plus per-role lists, the Jetson's ssh hop, now the host with the
-        gateway role, and the lidar's model, a new vessel fact."""
+    def test_the_gateway_role_is_tranquility(self):
+        """The Jetson's ssh hop is the `gateway` role (resolved-baseline.json); here that is tranquility."""
         hop = subprocess.run(['python3', '-I', str(ASTRO / 'devices/profile.py'), 'hosts',
                               str(HERE / 'blastoise/devices.yaml'), 'gateway'], capture_output=True, text=True)
         self.assertEqual(hop.stdout, 'tranquility\n', hop.stderr)
-        baseline = json.loads((HERE / 'tests/data/blastoise-baseline.json').read_text())
-        for kind, expected in baseline.items():
-            with self.subTest(kind=kind):
-                run = subprocess.run(['python3', '-I', str(ASTRO / 'devices/profile.py'), 'kind',
-                                      str(HERE / 'blastoise'), kind, str(HERE / 'blastoise/network.env')],
-                                     capture_output=True, text=True, env={'PATH': os.environ['PATH']})
-                self.assertEqual(run.returncode, 0, run.stderr)
-                values = {}
-                for line in run.stdout.splitlines():
-                    name, _, value = line.split(' || ', 1)[1].partition('=')
-                    values[name] = (__import__('shlex').split(value) or [''])[0]
-                if kind == 'hosts':
-                    added = set(values) - set(expected)
-                    self.assertTrue(all(k.startswith(('HW_SOURCES', 'HW_REPOS_', 'HW_OPERATOR_HEARTBEAT')) for k in added), added)
-                    self.assertEqual(values['HW_REPOS_ALL'], expected.pop('HW_REPOS'))
-                    values = {k: v for k, v in values.items() if k not in added}
-                    expected = {**expected, 'HW__KEYS': expected['HW__KEYS'].replace('repos', 'repos sources').replace('compose_project', 'compose_project operator_heartbeat')}
-                if kind == 'jetson':
-                    expected['HW_GATEWAY'] = 'gateway'                          # a role: tranquility (above)
-                if kind == 'lidar':
-                    self.assertEqual(values.pop('HW_MODEL'), 'VLP16')
-                    self.assertEqual(set(values.pop('HW__KEYS').split()), set(expected.pop('HW__KEYS').split()) | {'model'})
-                self.assertEqual(values, expected)
+
+
+@unittest.skipUnless(configuration or os.environ.get('REQUIRE_HARDWARE'), 'needs mhseals_hardware on PYTHONPATH')
+class ThrusterWiring(unittest.TestCase):
+    def test_every_vessel_loads_with_the_thruster_drivers_strict_reader(self):
+        """Duplicate keys, a non-wiring key or a bad channel_map refuse here, not first on the boat."""
+        self.assertIsNotNone(configuration, 'REQUIRE_HARDWARE is set but mhseals_hardware does not import')
+        with tempfile.NamedTemporaryFile('w', suffix='.yaml') as empty:
+            empty.write('{}\n')
+            empty.flush()
+            for env in sorted(HERE.glob('*/network.env')):
+                with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
+                        os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
+                    vessel.section.cache_clear()
+                    config = configuration.load_config(empty.name)
+                    wiring = yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('thrusters')
+                    if wiring and 'channel_map' in wiring:
+                        self.assertEqual(config['channel_map'], wiring['channel_map'])
+        vessel.section.cache_clear()
+
+
+@unittest.skipUnless(TESTING or os.environ.get('REQUIRE_TESTING'), 'needs mhseals_testing on PYTHONPATH')
+class HullShape(unittest.TestCase):
+    def test_every_vessels_hull_loads_with_the_tuis_reader(self):
+        """A bad hull: (unknown shape or key) stops the testing TUI at import, so it refuses here first."""
+        self.assertTrue(TESTING, 'REQUIRE_TESTING is set but mhseals_testing is not on PYTHONPATH')
+        from mhseals_hardware import vessel
+        hull = None
+        for env in sorted(HERE.glob('*/network.env')):
+            with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
+                    os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
+                vessel.section.cache_clear()
+                hull = hull or importlib.import_module('mhseals_testing.ui.minimap.hull')
+                shape = (yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('hull') or {}).get('shape')
+                if shape:
+                    self.assertEqual(hull._settings()['shape'], shape)
+                else:
+                    hull._settings()
+        vessel.section.cache_clear()
 
 
 if __name__ == '__main__':

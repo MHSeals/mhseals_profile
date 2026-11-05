@@ -5,7 +5,7 @@ MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock
 | Directory | Holds |
 | --- | --- |
 | `roboboat/` | the fleet: `profile.yaml`, `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
-| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (the lidar's model, MAC and rpm) |
+| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` the testing TUI draws, and the `thrusters:` wiring mhseals_hardware reads; tests load both with those readers) |
 | `squirtle/` | vessel stub until its values are known (the legacy Xavier NX, JetPack 5 / Foxy) |
 | `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, testing TUI, gateway); no laptop needs its own profile |
 
@@ -22,7 +22,7 @@ astro_dock ships no profiles: each machine names this repository as its profile 
 
 Fleet machines find themselves (blastoise-odroid and blastoise-jetson by their `STATIC_LEASES` MAC, tranquility by hostname). A registry host with the `operator` role is a control station, so tranquility resolves to host tranquility, vessel blastoise, station `control_station`. Any other operator laptop joins as a control station without a profile or registry entry: `--host NAME` (or `ASTRO_HOST`), or automatically when one of its addresses is on exactly one vessel's `LAN_SUBNET` (that vessel; `hw.sh whoami` says `boat LAN ADDR in SUBNET`). A boat computer never joins as a station: a Jetson or ODROID (`/proc/device-tree/model`), a leased MAC or a reserved or registry address stays unmatched. Without a vessel, pass `--vessel blastoise` (or export `ASTRO_VESSEL`) for device verbs and `hw.sh env`.
 
-A field edit is one commit here: push it, `./hw.sh profile sync URL COMMIT` on the operator laptop, then `./hw.sh hosts apply` checks that commit out on every host, so they all deploy one network plan (`./hw.sh hosts verify` compares them).
+A field edit is one commit here (when a resolved value changes on purpose, regenerate `tests/data/resolved-baseline.json` with `tests/resolved.py` in the same commit): push it, `./hw.sh profile sync URL COMMIT` on the operator laptop, then `./hw.sh hosts apply` checks that commit out on every host, so they all deploy one network plan (`./hw.sh hosts verify` compares them).
 
 Credentials are never in either repository. Put the keys of [`roboboat/secrets.keys`](roboboat/secrets.keys) in `~/.config/astro/secrets.env` (mode 600; `ASTRO_SECRETS` overrides) and check with `./hw.sh secrets check`, which prints the missing names, never values. The YAMLs name which key each device reads; empty router passwords are prompted.
 
@@ -62,7 +62,7 @@ flowchart LR
 
 mhseals_testing reads the registry to place each part of the stack on its host and to start or stop it there over ssh and `docker exec`. The ssh key lives in `~/.config/mhseals/ssh/` (`id_ed25519` and `known_hosts`), which the container mounts; on the operator computer `./hw.sh hosts keys` (or `./setup.linux.sh --components operator-key`) creates it if missing, installs it in each other host's `authorized_keys` through your own ssh and records the host keys, and is safe to rerun. A machine that hw.sh cannot recognise passes `--host H` (or `ASTRO_HOST`); the testing TUI also honours `self: <host>` in `~/.config/mhseals/devices.yaml`.
 
-Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml): every host checks out `all` (mhseals_hardware, mhseals_nav, mhseals_testing), the camera host adds direct_lidar_inertial_odometry, the operator rviz-plugin-zed-od and zed-ros2-wrapper. `./hw.sh hosts repos [--role ROLE...]` previews this computer's list.
+Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml) (`all` plus each of the host's roles); `./hw.sh hosts repos [--role ROLE...]` previews this computer's list.
 
 ### Boat computers
 
@@ -141,6 +141,10 @@ ros2 launch mhseals_nav navigation.launch.py sim:=false use_lidar:=true
 ```
 
 Check `ros2 topic hz /points` and `ros2 topic echo /map --once`; see the [mhseals_nav README](https://github.com/MHSeals/mhseals_nav#architecture) for the rest.
+
+### Thrusters
+
+The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and `reversed` only; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: mhseals_hardware README, Configuration.
 
 ## Fleet procedures
 

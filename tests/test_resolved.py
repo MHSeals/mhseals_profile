@@ -1,8 +1,8 @@
 """astro_dock configured with this repository as its profile source resolves what the fleet deployed.
 
 A `git clone` of ASTRO_DOCK (see test_profiles) gets a profiles.env naming this repository at its HEAD,
-runs `hw.sh profile sync` and must resolve exactly tests/data/resolved-baseline.json, recorded with the
-submodule-era astro_dock (tests/resolved.py). Nothing is contacted: the clones are local.
+runs `hw.sh profile sync` and must resolve exactly tests/data/resolved-baseline.json. When a profile changes on purpose, regenerate it
+with `python3 tests/resolved.py ASTRO tests/data/resolved-baseline.json` and review the diff. Nothing is contacted: the clones are local.
 """
 import json
 import os
