@@ -5,7 +5,7 @@ MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock
 | Directory | Holds |
 | --- | --- |
 | `roboboat/` | the fleet: `profile.yaml`, `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
-| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (the lidar's model, MAC and rpm) |
+| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` the testing TUI draws, and the `thrusters:` wiring mhseals_hardware reads) |
 | `squirtle/` | vessel stub until its values are known (the legacy Xavier NX, JetPack 5 / Foxy) |
 | `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, testing TUI, gateway); no laptop needs its own profile |
 
@@ -141,6 +141,10 @@ ros2 launch mhseals_nav navigation.launch.py sim:=false use_lidar:=true
 ```
 
 Check `ros2 topic hz /points` and `ros2 topic echo /map --once`; see the [mhseals_nav README](https://github.com/MHSeals/mhseals_nav#architecture) for the rest.
+
+### Thrusters
+
+The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, e.g. `channel_map`) is a vessel fact: change it with a commit here. The operator file `~/.config/mhseals/hardware.yaml` only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: mhseals_hardware README, Configuration.
 
 ## Fleet procedures
 
