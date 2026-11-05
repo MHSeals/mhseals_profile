@@ -62,7 +62,7 @@ flowchart LR
 
 mhseals_testing reads the registry to place each part of the stack on its host and to start or stop it there over ssh and `docker exec`. The ssh key lives in `~/.config/mhseals/ssh/` (`id_ed25519` and `known_hosts`), which the container mounts; on the operator computer `./hw.sh hosts keys` (or `./setup.linux.sh --components operator-key`) creates it if missing, installs it in each other host's `authorized_keys` through your own ssh and records the host keys, and is safe to rerun. A machine that hw.sh cannot recognise passes `--host H` (or `ASTRO_HOST`); the testing TUI also honours `self: <host>` in `~/.config/mhseals/devices.yaml`.
 
-Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml): every host checks out `all` (mhseals_hardware, mhseals_nav, mhseals_testing), the camera host adds direct_lidar_inertial_odometry, the operator rviz-plugin-zed-od and zed-ros2-wrapper. `./hw.sh hosts repos [--role ROLE...]` previews this computer's list.
+Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml) (`all` plus each of the host's roles); `./hw.sh hosts repos [--role ROLE...]` previews this computer's list.
 
 ### Boat computers
 
