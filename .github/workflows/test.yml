@@ -11,4 +11,4 @@ jobs:
       - uses: actions/checkout@v4
         with: {repository: MHSeals/mhseals_hardware, ref: atlas-fix, path: mhseals_hardware}
       - run: python3 -m pip install --quiet pyyaml
-      - run: ASTRO_DOCK=astro_dock PYTHONPATH=mhseals_hardware/mhseals_hardware python3 -m unittest discover -s tests -v
+      - run: ASTRO_DOCK=astro_dock PYTHONPATH=mhseals_hardware REQUIRE_HARDWARE=1 python3 -m unittest discover -s tests -v

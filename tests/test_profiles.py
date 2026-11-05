@@ -116,10 +116,11 @@ class ShippedProfiles(unittest.TestCase):
         self.assertEqual(hop.stdout, 'tranquility\n', hop.stderr)
 
 
-@unittest.skipUnless(configuration, 'needs mhseals_hardware on PYTHONPATH')
+@unittest.skipUnless(configuration or os.environ.get('REQUIRE_HARDWARE'), 'needs mhseals_hardware on PYTHONPATH')
 class ThrusterWiring(unittest.TestCase):
     def test_every_vessel_loads_with_the_thruster_drivers_strict_reader(self):
         """Duplicate keys, a non-wiring key or a bad channel_map refuse here, not first on the boat."""
+        self.assertIsNotNone(configuration, 'REQUIRE_HARDWARE is set but mhseals_hardware does not import')
         with tempfile.NamedTemporaryFile('w', suffix='.yaml') as empty:
             empty.write('{}\n')
             empty.flush()
@@ -128,8 +129,9 @@ class ThrusterWiring(unittest.TestCase):
                         os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
                     vessel.section.cache_clear()
                     config = configuration.load_config(empty.name)
-                    if env.parent.name == 'blastoise':
-                        self.assertEqual(config['channel_map'], [1, 3, 2, 4])
+                    wiring = yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('thrusters')
+                    if wiring and 'channel_map' in wiring:
+                        self.assertEqual(config['channel_map'], wiring['channel_map'])
         vessel.section.cache_clear()
 
 
