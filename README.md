@@ -140,16 +140,16 @@ For mapping and navigation see the [mhseals_nav README](https://github.com/MHSea
 
 ### Thrusters
 
-The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and `reversed` only; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: [mhseals_hardware README, Configuration](https://github.com/MHSeals/mhseals_hardware#configuration).
+The thruster wiring (`thrusters:` in `blastoise/profile.yaml`: `channel_map`, `reversed` and the pins `pwm_chips`, `pwm_channels`, `mosfet_chip`, `mosfet_line`, `mosfet_active_high`; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: [mhseals_hardware README, Configuration](https://github.com/MHSeals/mhseals_hardware#configuration).
 
 ## astro
 
 The `astro:` section of [`roboboat/profile.yaml`](roboboat/profile.yaml) tells astro where our files are:
 tests (`mhseals_hardware/config/tests.yaml`), bag presets (`mhseals_nav/config/bags.yaml`), the state file
 (`~/.config/mhseals/hardware.yaml`), crane's help, the field repo (MHSeals/mhseals_field) and the stacks
-`astro up` starts (sensors, perception, drive by default; nav on request), each on its role's host. Every
-vessel inherits it; [`sim/profile.yaml`](sim/profile.yaml) changes the state file, data dir, sim backend
-(crane_ml's `Tools/RoboBoat/sim_up`), turns off auto issues, and marks the stacks the sim already runs.
+`astro up` starts (localization, perception and drive by default; nav, mapping and mission on request), each on
+its role's host. Every vessel inherits it; [`sim/profile.yaml`](sim/profile.yaml) changes the state file, data dir, sim backend
+(crane's `bin/crane sim`), turns off auto issues, and marks the stacks the sim already runs.
 
 ## Fleet procedures
 
