@@ -13,6 +13,7 @@ astro:
   sim: null                                   # sim backend command (`astro sim up|down|status|check`); the sim vessel sets it
   help: ['${CRANE_DIR:-~/crane_ml}/help.yaml']   # more help.yaml groups: crane's verbs (astro crane doctor, ...)
   bundle_next: 'next: astro crane fit {bundle}'  # printed after astro bundle
+  test_needs: [localization, drive]   # stacks `astro test` starts first when down; a test's own needs in tests.yaml replace them
   field: {repo: MHSeals/mhseals_field, url: 'https://github.com/MHSeals/mhseals_field.git',
           dir: ~/.local/share/astro/field, auto: true}   # astro check/issue/sync/show; auto: issues from failures
   # The long-running stacks `astro up` starts, in this order, each on its host (registry host or role) in a
