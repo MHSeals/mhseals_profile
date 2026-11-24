@@ -1,31 +1,49 @@
 # mhseals_profile
 
-MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock): the `roboboat` fleet, the `blastoise` and `squirtle` vessels, the `sim` vessel (the crane_ml sim on this machine), and the `control_station` station (the role of any operator laptop). astro_dock's `hw.sh` and `setup.linux.sh` read them for the network, devices, hosts and repositories; astro_dock itself names no team.
+MHSeals' profiles for [astro_dock](https://github.com/1unarzDev/astro_dock): every fact about our fleet,
+boats, network and hosts lives here, so astro_dock stays team-agnostic.
+
+```bash
+astro profile sync https://github.com/MHSeals/mhseals_profile.git COMMIT   # once per machine
+astro whoami                 # this machine's host, vessel and station, and how they were found
+astro env LIDAR_IP           # one value of the vessel's network env
+astro secrets check          # the missing secret names (never values)
+```
 
 | Directory | Holds |
 | --- | --- |
-| `roboboat/` | the fleet: `profile.yaml`, `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
-| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` outline, and the `thrusters:` wiring mhseals_hardware reads; a test loads it with that reader) |
-| `squirtle/` | vessel stub until its values are known (the legacy Xavier NX, JetPack 5 / Foxy) |
-| `sim/` | vessel, extends blastoise: this machine only (`127.0.0.1`), ROS domain 101, its own `astro` state file (`~/.config/mhseals/hardware_sim.yaml`) and data dir (`bags/sim`), so a sim run never touches the boat's values |
-| `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, gateway); no laptop needs its own profile |
+| `roboboat/` | The fleet: `profile.yaml` (incl. the `astro:` section), `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
+| `blastoise/` | Vessel (extends roboboat): `network.env` (subnet, router, gateway, DHCP, reservations, DNS, devices), `devices.yaml` (hosts, users and roles), its radios, and `profile.yaml` (lidar model, MAC and rpm, `hull:` outline, `thrusters:` wiring) |
+| `squirtle/` | Vessel stub until its values are known (the Xavier NX, JetPack 5 / Foxy) |
+| `sim/` | Vessel (extends blastoise): this machine only (`127.0.0.1`), ROS domain 101, its own state file (`~/.config/mhseals/hardware_sim.yaml`) and data dir (`bags/sim`), so a sim run never touches the boat's values |
+| `control_station/` | Station (extends roboboat): the role of every operator laptop (RTK base, gateway, time); no laptop needs its own profile |
 
 ## Use from astro_dock
 
-astro_dock ships no profiles: each machine names this repository as its profile source in `~/.config/astro/profiles.env`, which `hw.sh profile sync` writes and then checks the repository out at astro_dock's `profiles/` (gitignored):
+`astro profile sync URL COMMIT` records the repository and ref in `~/.config/astro/profiles.env` and checks
+it out at astro_dock's `profiles/` (gitignored). Copy `profiles.env` to another machine and its first
+command checks the profiles out; `astro profile sync` alone moves to the recorded ref and refuses local
+changes (they belong here). To use a separate checkout as is, set `ASTRO_PROFILES=/path/to/mhseals_profile`.
 
-```bash
-./hw.sh profile sync https://github.com/MHSeals/mhseals_profile.git COMMIT   # records URL and ref, checks out
-./hw.sh whoami                            # the source and commit, this machine's host and vessel, and how found
-```
+**Which machine is which.** Boat computers find themselves by their `STATIC_LEASES` MAC, tranquility by
+hostname. A registry host with the `operator` role is a control station, so tranquility resolves to host
+tranquility, vessel blastoise, station `control_station`. Any other laptop joins as a control station with
+`--host NAME` (or `ASTRO_HOST`), or automatically when one of its addresses is on exactly one vessel's
+`LAN_SUBNET` (`astro whoami` says `boat LAN ADDR in SUBNET`). A boat computer never joins as a station.
+Without a vessel, pass `--vessel blastoise` (or `ASTRO_VESSEL`).
 
-`profiles.env` holds `ASTRO_PROFILES_URL` and `ASTRO_PROFILES_REF` (a commit, tag or branch; default `main`); copy it to another machine, and its first `hw.sh` command checks the profiles out. `./hw.sh profile sync` alone moves to the recorded ref; sync refuses local changes in `profiles/`, which belong here. A checkout of astro_dock from the submodule era keeps its `profiles/` and needs only the one `profile sync`. Another checkout of this repository works through `ASTRO_PROFILES=/path/to/mhseals_profile` (used as it is, never synced).
+**A field edit** is one commit here (when a resolved value changes on purpose, regenerate
+`tests/data/resolved-baseline.json` with `tests/resolved.py` in the same commit): push it,
+`astro profile sync URL COMMIT` on the operator laptop, then `astro device hosts apply` checks that commit
+out on every host (`astro device hosts verify` compares them).
 
-Fleet machines find themselves (blastoise-odroid and blastoise-jetson by their `STATIC_LEASES` MAC, tranquility by hostname). A registry host with the `operator` role is a control station, so tranquility resolves to host tranquility, vessel blastoise, station `control_station`. Any other operator laptop joins as a control station without a profile or registry entry: `--host NAME` (or `ASTRO_HOST`), or automatically when one of its addresses is on exactly one vessel's `LAN_SUBNET` (that vessel; `hw.sh whoami` says `boat LAN ADDR in SUBNET`). A boat computer never joins as a station: a Jetson or ODROID (`/proc/device-tree/model`), a leased MAC or a reserved or registry address stays unmatched. Without a vessel, pass `--vessel blastoise` (or export `ASTRO_VESSEL`) for device verbs and `hw.sh env`.
+**Credentials** are never in a repository. Put the keys of [`roboboat/secrets.keys`](roboboat/secrets.keys)
+in `~/.config/astro/secrets.env` (mode 600; `ASTRO_SECRETS` overrides) and run `astro secrets check`. The
+YAMLs name which key each device reads; empty router passwords are prompted.
 
-A field edit is one commit here (when a resolved value changes on purpose, regenerate `tests/data/resolved-baseline.json` with `tests/resolved.py` in the same commit): push it, `./hw.sh profile sync URL COMMIT` on the operator laptop, then `./hw.sh hosts apply` checks that commit out on every host, so they all deploy one network plan (`./hw.sh hosts verify` compares them).
-
-Credentials are never in either repository. Put the keys of [`roboboat/secrets.keys`](roboboat/secrets.keys) in `~/.config/astro/secrets.env` (mode 600; `ASTRO_SECRETS` overrides) and check with `./hw.sh secrets check`, which prints the missing names, never values. The YAMLs name which key each device reads; empty router passwords are prompted.
+**Device commands** are `astro device KIND VERB` (`router`, `radio`, `lidar`, `jetson`, `hosts`; each has
+`status`, `plan`, `verify`, `apply`, `rollback`, and `KIND --help` lists the rest). They run astro_dock's
+`hw.sh`.
 
 ## Blastoise network
 
@@ -48,22 +66,22 @@ flowchart LR
 
 | Address | Device | Source |
 | --- | --- | --- |
-| .1 | DD-WRT router: DHCP, DNS, Wi-Fi | static, `hw.sh router` |
+| .1 | DD-WRT router: DHCP, DNS, Wi-Fi | static, `astro device router` |
 | .2 | Gateway laptop | static on its LAN profile |
 | .21 / .22 | Bullet AC / Rocket 5AC Lite management | set on each radio |
 | .100–.149 | DHCP pool | router |
 | .152 / .153 | Boat computer / Jetson | DHCP reservations (`STATIC_LEASES`) |
 | .201 | VLP16 lidar (factory .1.201, re-addressed) | static on the sensor |
 
-`./hw.sh env` prints the vessel's network env path, `./hw.sh env KEY` one of its values.
+`astro env` prints the vessel's network env path, `astro env KEY` one of its values.
 
 ### Hosts and roles
 
 [`blastoise/devices.yaml`](blastoise/devices.yaml) says which computer has which role: `blastoise-odroid` is the boat computer (MAVROS, thrusters), `blastoise-jetson` the camera host (GPU, ZED, lidar) and `tranquility` the operator and gateway (its operator role makes it a `control_station`; another operator laptop needs no entry here). It names no addresses; each host joins `blastoise/network.env` on its name (a `$KEY` or its `STATIC_LEASES` reservation). The ssh names are per host (`blastoise-odroid`, `blastoise-jetson`, `squirtle-jetson`); a vessel name is never an ssh target.
 
-`astro on HOST` reads the registry to reach a host's dev container over ssh and `docker exec`. The ssh key lives in `~/.config/mhseals/ssh/` (`id_ed25519` and `known_hosts`), which the container mounts; on the operator computer `./hw.sh hosts keys` (or `./setup.linux.sh --components operator-key`) creates it if missing, installs it in each other host's `authorized_keys` through your own ssh and records the host keys, and is safe to rerun. A machine that hw.sh cannot recognise passes `--host H` (or `ASTRO_HOST`).
+`astro on HOST` reads the registry to reach a host's dev container over ssh and `docker exec`. The ssh key lives in `~/.config/mhseals/ssh/` (`id_ed25519` and `known_hosts`), which the container mounts; on the operator computer `astro device hosts keys` (or `./setup.linux.sh --components operator-key`) creates it if missing, installs it in each other host's `authorized_keys` through your own ssh and records the host keys, and is safe to rerun. A machine that astro cannot recognise passes `--host H` (or `ASTRO_HOST`).
 
-Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml) (`all` plus each of the host's roles); `./hw.sh hosts repos [--role ROLE...]` previews this computer's list.
+Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml) (`all` plus each of the host's roles); `astro device hosts repos [--role ROLE...]` previews this computer's list.
 
 ### Boat computers
 
@@ -73,17 +91,17 @@ A freshly flashed JetPack 6 Jetson (the Orin Nano Super with the ZED 2i on USB) 
 
 ```bash
 git clone --recurse-submodules https://github.com/1unarzDev/astro_dock.git ~/astro_dock && cd ~/astro_dock
-./hw.sh profile sync https://github.com/MHSeals/mhseals_profile.git COMMIT   # or copy profiles.env
+./hw.sh profile sync https://github.com/MHSeals/mhseals_profile.git COMMIT   # astro is not on PATH yet; or copy profiles.env
 ASTRO_NTP_SERVER=lan ./setup.linux.sh --non-interactive --yes \
   --components clock,docker,gpu,devices,devtools,compose,boat,jetson
 sudo reboot
 ```
 
-After the reboot, start the dev container (astro_dock's *Image publishing and deployment*), then run `./setup.linux.sh --components repos`: it clones this host's repositories and builds them inside the dev container. The ZED SDK downloads the camera's factory calibration by serial number on first use (through the gateway) and keeps it in the `zed_settings` volume. Promote a Jetson image with `./hw.sh jetson apply USER@blastoise-jetson`; [`roboboat/jetson.yaml`](roboboat/jetson.yaml) sets the family and the ssh hop, the registry host with the `gateway` role (tranquility; `HW_GATEWAY=` for direct).
+After the reboot, start the dev container (astro_dock README, *Containers and images*), then run `./setup.linux.sh --components repos`: it clones this host's repositories and builds them inside the dev container. The ZED SDK downloads the camera's factory calibration by serial number on first use (through the gateway) and keeps it in the `zed_settings` volume. Promote a Jetson image with `astro device jetson apply USER@blastoise-jetson`; [`roboboat/jetson.yaml`](roboboat/jetson.yaml) sets the family and the ssh hop, the registry host with the `gateway` role (tranquility; `HW_GATEWAY=` for direct).
 
 ### Time
 
-Boat devices reach `time.cloudflare.com` through the gateway. Run `ASTRO_NTP_ALLOW=lan ./setup.linux.sh --components clock` on blastoise-odroid (chrony) to serve boat time, also without internet, and `ASTRO_NTP_SERVER=lan ./setup.linux.sh --components clock` on the other boat computers: they prefer it, fall back to public servers away from the boat, and step the clock on the first syncs after boot (the Orin has no battery-backed clock). The time server is the `time_server` role (blastoise-odroid). Without internet on the boat, it follows the `operator` role's hosts: run `ASTRO_NTP_ALLOW=operator ./setup.linux.sh --components clock` on an operator laptop that has internet time to serve the boat subnet while it is synchronized. astro_dock's `.devcontainer/astro-clock.py` prints every boat host's offset.
+Boat devices reach `time.cloudflare.com` through the gateway. Run `ASTRO_NTP_ALLOW=lan ./setup.linux.sh --components clock` on blastoise-odroid (chrony) to serve boat time, also without internet, and `ASTRO_NTP_SERVER=lan ./setup.linux.sh --components clock` on the other boat computers: they prefer it, fall back to public servers away from the boat, and step the clock on the first syncs after boot (the Orin has no battery-backed clock). The time server is the `time_server` role (blastoise-odroid). Without internet on the boat, it follows the `operator` role's hosts: run `ASTRO_NTP_ALLOW=operator ./setup.linux.sh --components clock` on an operator laptop that has internet time to serve the boat subnet while it is synchronized. `astro astro-clock.py` prints every boat host's clock offset.
 
 ### Gateway
 
@@ -100,17 +118,17 @@ A point-to-point airMAX AC bridge on airOS 8.7.1. Both radios run network mode `
 | Frequency / width | 5165 MHz, 40 MHz | follows the AP |
 | Management address | static on `br0`, link-local alias on | static on `br0`, link-local alias on |
 
-`./hw.sh radio` (verbs in `./hw.sh radio --help`) uses `radio.yaml` and `UBNT_*_IP`. Never run a site survey: on airOS it leaves the channel and drops the link.
+`astro device radio VERB` uses `radio.yaml` and `UBNT_*_IP`. Never run a site survey: on airOS it leaves the channel and drops the link.
 
 **Recovery.** If a radio is unreachable at its LAN address, connect a host to the radio's PoE LAN port and browse to the link-local address that `verify` printed (give the host a `169.254.0.0/16` address). As a last resort, hold the reset button for about 10 s to restore factory defaults (`192.168.1.20`). Then upload the latest snapshot, or set the values in the table plus the WPA key, and run `verify`.
 
 ### Router
 
-`./hw.sh router` configures the DD-WRT router over ssh from `router.yaml` (name/SSID/admin user, time zone) and the addresses: DHCP with reservations above the pool, DNS and WPA2 Wi-Fi, router WAN/NAT off. `plan` inspects only. `apply` confirms, backs up NVRAM when supported, commits one transaction that restores the previous values 300 s after boot unless the post-reboot `verify` passes, and reboots. `rollback` restores a backup; `key` prints the router key. State: astro_dock's ignored `router_setup_state/` if present, else `~/.local/state/astro_dock/router/`.
+`astro device router VERB` configures the DD-WRT router over ssh from `router.yaml` (name/SSID/admin user, time zone) and the addresses: DHCP with reservations above the pool, DNS and WPA2 Wi-Fi, router WAN/NAT off. `plan` inspects only. `apply` confirms, backs up NVRAM when supported, commits one transaction that restores the previous values 300 s after boot unless the post-reboot `verify` passes, and reboots. `rollback` restores a backup; `key` prints the router key. State: astro_dock's ignored `router_setup_state/` if present, else `~/.local/state/astro_dock/router/`.
 
 ### Lidar
 
-A Velodyne VLP16 (`VLP-16-A`, firmware 3.0.41.1) with a static address and no login. It sends 2368/8308 UDP by unicast to the host running the driver, blastoise-jetson (.153): about 8 Mbit/s with single returns, twice with `Dual`, and unicast keeps it off the radio link. Its address is `LIDAR_IP` in `blastoise/network.env` (mhseals_nav reads it) and its data host the `camera_host` role; model, MAC and RPM are vessel facts in `blastoise/profile.yaml` (`lidar:`), ports, returns and FOV in `roboboat/lidar.yaml`. `./hw.sh lidar` uses its HTTP API:
+A Velodyne VLP16 (`VLP-16-A`, firmware 3.0.41.1) with a static address and no login. It sends 2368/8308 UDP by unicast to the host running the driver, blastoise-jetson (.153): about 8 Mbit/s with single returns, twice with `Dual`, and unicast keeps it off the radio link. Its address is `LIDAR_IP` in `blastoise/network.env` (mhseals_nav reads it) and its data host the `camera_host` role; model, MAC and RPM are vessel facts in `blastoise/profile.yaml` (`lidar:`), ports, returns and FOV in `roboboat/lidar.yaml`. `astro device lidar VERB` uses its HTTP API:
 
 - `status`, `plan` and `verify` are read-only; `verify` exits 3 when a profile value differs. `snapshot` saves settings, status and info to `~/.local/state/astro_dock/lidar/`.
 - `apply` validates, snapshots and after `APPLY` posts only the differing keys, then saves once. Netmask and gateway go last with a reset, which needs DHCP off, and must be active afterwards. It never moves the address. `rollback [SNAPSHOT]` re-applies a snapshot the same way.
@@ -122,34 +140,28 @@ For mapping and navigation see the [mhseals_nav README](https://github.com/MHSea
 
 ### Thrusters
 
-The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and `reversed` only; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: mhseals_hardware README, Configuration.
+The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and `reversed` only; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: [mhseals_hardware README, Configuration](https://github.com/MHSeals/mhseals_hardware#configuration).
 
 ## astro
 
-`roboboat/profile.yaml`'s `astro:` section tells astro_dock's `astro` CLI where the team's files are; it holds no content. Every vessel inherits it, and `sim` overrides `state`, `data` and `sim`:
-
-```yaml
-astro:
-  tests: mhseals_hardware/config/tests.yaml   # test procedures
-  bags:  mhseals_nav/config/bags.yaml         # bag presets
-  state: ~/.config/mhseals/hardware.yaml      # what `astro apply` writes
-  check: ros2 run mhseals_hardware config_check
-  events: /events
-  data: null                                  # ASTRO_DATA unless set (sim: bags/sim)
-  sim: null                                   # sim backend command (sim: crane_ml's Tools/RoboBoat/sim_up)
-```
+The `astro:` section of [`roboboat/profile.yaml`](roboboat/profile.yaml) tells astro where our files are:
+tests (`mhseals_hardware/config/tests.yaml`), bag presets (`mhseals_nav/config/bags.yaml`), the state file
+(`~/.config/mhseals/hardware.yaml`), crane's help, the field repo (MHSeals/mhseals_field) and the stacks
+`astro up` starts (sensors, perception, drive by default; nav on request), each on its role's host. Every
+vessel inherits it; [`sim/profile.yaml`](sim/profile.yaml) changes the state file, data dir, sim backend
+(crane_ml's `Tools/RoboBoat/sim_up`), turns off auto issues, and marks the stacks the sim already runs.
 
 ## Fleet procedures
 
 Update every boat computer from one shell on a control station (tranquility):
 
 ```bash
-./hw.sh hosts plan                                   # read-only: heads against origin/main
-./hw.sh hosts apply [--image lunarzdev/astro@sha256:DIGEST] [HOST...]
-./hw.sh hosts verify
+astro device hosts plan                              # read-only: heads against origin/main
+astro device hosts apply [--image lunarzdev/astro@sha256:DIGEST] [HOST...]
+astro device hosts verify
 ```
 
-`apply` backs up dirty state under `~/.local/state/astro_dock/hosts/` on each ssh host of `blastoise/devices.yaml`, fast-forwards astro_dock (initialising `profiles/`) and the host's repositories to `origin/main`, prunes stale symlink-install links and builds in the dev container. `--image` first commits the running container as `astro-rollback:STAMP`, then recreates it on the image; the named ZED volumes persist. `./hw.sh hosts rollback astro-rollback:STAMP [HOST...]` recreates on the rollback image and builds. The drive stack is started by hand on the boat computer (`ros2 launch mhseals_hardware drive.launch.py`).
+`apply` backs up dirty state under `~/.local/state/astro_dock/hosts/` on each ssh host of `blastoise/devices.yaml`, fast-forwards astro_dock (initialising `profiles/`) and the host's repositories to `origin/main`, prunes stale symlink-install links and builds in the dev container. `--image` first commits the running container as `astro-rollback:STAMP`, then recreates it on the image; the named ZED volumes persist. `astro device hosts rollback astro-rollback:STAMP [HOST...]` recreates on the rollback image and builds. Stacks (drive included) start with `astro up`.
 
 ## To fill (owner)
 
@@ -157,4 +169,4 @@ Update every boat computer from one shell on a control station (tranquility):
 - Where the team keeps the radio and router passwords and the WPA key, outside `secrets.env`.
 - The Rocket's own default gateway is `192.168.1.1`, which is off this subnet; set it to the router in the airOS UI if the radio needs NTP or firmware checks.
 - squirtle's network env and registry; it must not reuse `192.168.0.0/24`, the `blastoise-*` names or blastoise's ROS domain.
-- The live router still leases .153 to `squirtle-jetson` (`48:b0:2d:51:44:32`); `./hw.sh router plan`, then `apply`.
+- The live router still leases .153 to `squirtle-jetson` (`48:b0:2d:51:44:32`); `astro device router plan`, then `apply`.
