@@ -10,3 +10,34 @@ astro:
   events: /events
   data: null                                  # data dir: ASTRO_DATA unless a vessel sets one (workspace-relative)
   sim: null                                   # sim backend command (`astro sim up|down|status`); the sim vessel sets it
+  # The long-running stacks `astro up` starts, in this order, each on its host (registry host or role) in a
+  # private tmux server or under setsid; up waits until the ready topics publish. run: null = started elsewhere.
+  stacks:
+    sensors:     # MAVROS, odometry and the EKFs
+      host: boat_computer
+      run: ros2 launch mhseals_nav device.launch.py device:=odroid only:=odometry,ekf
+      ready: [/odom/local, /mavros/rc/in]
+      needs: []
+      default: true
+      with: {}
+    perception:  # ZED, objects and the lidar
+      host: camera_host
+      run: ros2 launch mhseals_nav device.launch.py device:=jetson
+      ready: [/points, /front/zed_node/rgb/color/rect/camera_info]
+      needs: []
+      default: true
+      with: {}
+    drive:       # command mux, mixer and thruster output
+      host: boat_computer
+      run: ros2 launch mhseals_hardware drive.launch.py
+      ready: [/command_mux/state, /thrusters/pwm]
+      needs: [sensors]
+      default: true
+      with: {controller: 'controller:=true'}
+    nav:         # Nav2
+      host: boat_computer
+      run: ros2 launch mhseals_nav device.launch.py device:=odroid only:=navigation
+      ready: [/local_costmap/costmap]
+      needs: [sensors]
+      default: false
+      with: {}
