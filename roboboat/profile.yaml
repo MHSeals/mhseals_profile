@@ -50,7 +50,7 @@ astro:
       host: boat_computer
       run: ros2 launch mhseals_nav device.launch.py device:=odroid only:=mapping
       ready: [/mapData]
-      needs: [localization]
+      needs: [localization, perception]   # RTAB-Map reads the camera and /points
       default: false
       with: {}
     mission:        # the RoboBoat mission tree
