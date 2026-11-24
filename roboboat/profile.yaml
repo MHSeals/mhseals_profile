@@ -8,3 +8,4 @@ astro:
   check: ros2 run mhseals_hardware config_check   # validates state after apply
   events: /events
   data: null                                  # data dir: ASTRO_DATA unless a vessel sets one (workspace-relative)
+  sim: null                                   # sim backend command (`astro sim up|down|status`); the sim vessel sets it

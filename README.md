@@ -126,7 +126,7 @@ The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and
 
 ## astro
 
-`roboboat/profile.yaml`'s `astro:` section tells astro_dock's `astro` CLI where the team's files are; it holds no content. Every vessel inherits it, and `sim` overrides `state` and `data`:
+`roboboat/profile.yaml`'s `astro:` section tells astro_dock's `astro` CLI where the team's files are; it holds no content. Every vessel inherits it, and `sim` overrides `state`, `data` and `sim`:
 
 ```yaml
 astro:
@@ -136,6 +136,7 @@ astro:
   check: ros2 run mhseals_hardware config_check
   events: /events
   data: null                                  # ASTRO_DATA unless set (sim: bags/sim)
+  sim: null                                   # sim backend command (sim: crane_ml's Tools/RoboBoat/sim_up)
 ```
 
 ## Fleet procedures

@@ -7,3 +7,4 @@ registry: devices.yaml
 astro:
   state: ~/.config/mhseals/hardware_sim.yaml
   data: bags/sim
+  sim: '${CRANE_DIR:-~/crane_ml}/Tools/RoboBoat/sim_up'   # the sim backend; astro exports this profile's env
