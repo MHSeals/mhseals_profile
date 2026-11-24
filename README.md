@@ -1,13 +1,14 @@
 # mhseals_profile
 
-MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock): the `roboboat` fleet, the `blastoise` and `squirtle` vessels, and the `control_station` station (the role of any operator laptop). astro_dock's `hw.sh` and `setup.linux.sh` read them for the network, devices, hosts and repositories; astro_dock itself names no team.
+MHSeals' fleet profiles for [astro_dock](https://github.com/1unarzDev/astro_dock): the `roboboat` fleet, the `blastoise` and `squirtle` vessels, the `sim` vessel (the crane_ml sim on this machine), and the `control_station` station (the role of any operator laptop). astro_dock's `hw.sh` and `setup.linux.sh` read them for the network, devices, hosts and repositories; astro_dock itself names no team.
 
 | Directory | Holds |
 | --- | --- |
 | `roboboat/` | the fleet: `profile.yaml`, `topology.yaml` (members and links), `secrets.keys`, `hosts.yaml` (repositories by role), and the shared `router`, `radio`, `lidar`, `jetson` YAMLs |
-| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` the testing TUI draws, and the `thrusters:` wiring mhseals_hardware reads; tests load both with those readers) |
+| `blastoise/` | vessel, extends roboboat, vessel facts only: `network.env` (addresses: subnet, router, gateway, DHCP range, reservations, DNS, devices), `devices.yaml` (hosts, their users and roles: `boat_computer`, `time_server`, `camera_host`, `operator`, `gateway`; each reads as `$<ROLE>_IP`), its radios, and `profile.yaml` (vessel facts: the lidar's model, MAC and rpm, the `hull:` outline, and the `thrusters:` wiring mhseals_hardware reads; a test loads it with that reader) |
 | `squirtle/` | vessel stub until its values are known (the legacy Xavier NX, JetPack 5 / Foxy) |
-| `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, testing TUI, gateway); no laptop needs its own profile |
+| `sim/` | vessel, extends blastoise: this machine only (`127.0.0.1`), ROS domain 101, its own `astro` state file (`~/.config/mhseals/hardware_sim.yaml`) and data dir (`bags/sim`), so a sim run never touches the boat's values |
+| `control_station/` | station, extends roboboat: the role of every operator laptop (RTK base, heartbeat, gateway); no laptop needs its own profile |
 
 ## Use from astro_dock
 
@@ -60,7 +61,7 @@ flowchart LR
 
 [`blastoise/devices.yaml`](blastoise/devices.yaml) says which computer has which role: `blastoise-odroid` is the boat computer (MAVROS, thrusters), `blastoise-jetson` the camera host (GPU, ZED, lidar) and `tranquility` the operator and gateway (its operator role makes it a `control_station`; another operator laptop needs no entry here). It names no addresses; each host joins `blastoise/network.env` on its name (a `$KEY` or its `STATIC_LEASES` reservation). The ssh names are per host (`blastoise-odroid`, `blastoise-jetson`, `squirtle-jetson`); a vessel name is never an ssh target.
 
-mhseals_testing reads the registry to place each part of the stack on its host and to start or stop it there over ssh and `docker exec`. The ssh key lives in `~/.config/mhseals/ssh/` (`id_ed25519` and `known_hosts`), which the container mounts; on the operator computer `./hw.sh hosts keys` (or `./setup.linux.sh --components operator-key`) creates it if missing, installs it in each other host's `authorized_keys` through your own ssh and records the host keys, and is safe to rerun. A machine that hw.sh cannot recognise passes `--host H` (or `ASTRO_HOST`); the testing TUI also honours `self: <host>` in `~/.config/mhseals/devices.yaml`.
+`astro on HOST` reads the registry to reach a host's dev container over ssh and `docker exec`. The ssh key lives in `~/.config/mhseals/ssh/` (`id_ed25519` and `known_hosts`), which the container mounts; on the operator computer `./hw.sh hosts keys` (or `./setup.linux.sh --components operator-key`) creates it if missing, installs it in each other host's `authorized_keys` through your own ssh and records the host keys, and is safe to rerun. A machine that hw.sh cannot recognise passes `--host H` (or `ASTRO_HOST`).
 
 Repositories per role come from [`roboboat/hosts.yaml`](roboboat/hosts.yaml) (`all` plus each of the host's roles); `./hw.sh hosts repos [--role ROLE...]` previews this computer's list.
 
@@ -123,6 +124,20 @@ For mapping and navigation see the [mhseals_nav README](https://github.com/MHSea
 
 The thruster wiring (`thrusters:` in `blastoise/profile.yaml`, `channel_map` and `reversed` only; mhseals_hardware refuses any other key) is a vessel fact: change it with a commit here. mhseals_hardware's operator file only overrides it, and a broken `profile.yaml` stops the thruster driver at startup. Layer order: mhseals_hardware README, Configuration.
 
+## astro
+
+`roboboat/profile.yaml`'s `astro:` section tells astro_dock's `astro` CLI where the team's files are; it holds no content. Every vessel inherits it, and `sim` overrides `state` and `data`:
+
+```yaml
+astro:
+  tests: mhseals_hardware/config/tests.yaml   # test procedures
+  bags:  mhseals_nav/config/bags.yaml         # bag presets
+  state: ~/.config/mhseals/hardware.yaml      # what `astro apply` writes
+  check: ros2 run mhseals_hardware config_check
+  events: /events
+  data: null                                  # ASTRO_DATA unless set (sim: bags/sim)
+```
+
 ## Fleet procedures
 
 Update every boat computer from one shell on a control station (tranquility):
@@ -133,7 +148,7 @@ Update every boat computer from one shell on a control station (tranquility):
 ./hw.sh hosts verify
 ```
 
-`apply` backs up dirty state under `~/.local/state/astro_dock/hosts/` on each ssh host of `blastoise/devices.yaml`, fast-forwards astro_dock (initialising `profiles/`) and the host's repositories to `origin/main`, prunes stale symlink-install links and builds in the dev container. `--image` first commits the running container as `astro-rollback:STAMP`, then recreates it on the image; the named ZED volumes persist. `./hw.sh hosts rollback astro-rollback:STAMP [HOST...]` recreates on the rollback image and builds. Parts are started from the `boat_test` TUI.
+`apply` backs up dirty state under `~/.local/state/astro_dock/hosts/` on each ssh host of `blastoise/devices.yaml`, fast-forwards astro_dock (initialising `profiles/`) and the host's repositories to `origin/main`, prunes stale symlink-install links and builds in the dev container. `--image` first commits the running container as `astro-rollback:STAMP`, then recreates it on the image; the named ZED volumes persist. `./hw.sh hosts rollback astro-rollback:STAMP [HOST...]` recreates on the rollback image and builds. The drive stack is started by hand on the boat computer (`ros2 launch mhseals_hardware drive.launch.py`).
 
 ## To fill (owner)
 

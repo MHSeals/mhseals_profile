@@ -1,0 +1,9 @@
+# The crane_ml sim as a vessel: blastoise's facts on this machine only, on a private ROS domain, with its own
+# state file and data dir so a sim run never touches the boat's values.
+extends: blastoise
+kind: vessel
+network_env: network.env
+registry: devices.yaml
+astro:
+  state: ~/.config/mhseals/hardware_sim.yaml
+  data: bags/sim

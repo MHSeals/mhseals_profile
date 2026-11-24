@@ -1,2 +1,10 @@
 # RoboBoat, competition-wide: the repositories, device drivers and defaults every boat shares. A boat
 # profile (blastoise, squirtle) extends it with its network env, host registry, radios, lidar and Jetson.
+# astro (astro_dock's CLI): pointers to the team's files, no content of its own.
+astro:
+  tests: mhseals_hardware/config/tests.yaml   # procedures (package-relative)
+  bags:  mhseals_nav/config/bags.yaml         # bag presets
+  state: ~/.config/mhseals/hardware.yaml      # what apply writes
+  check: ros2 run mhseals_hardware config_check   # validates state after apply
+  events: /events
+  data: null                                  # data dir: ASTRO_DATA unless a vessel sets one (workspace-relative)

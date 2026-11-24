@@ -17,10 +17,10 @@ import tempfile
 
 import yaml
 
-# Vessel facts that the team's code reads but no hw.sh driver owns (hull: mhseals_testing's boat glyph;
-# thrusters: mhseals_hardware's load_config). astro_dock only echoes them, so the record leaves them out;
-# test_profiles' ThrusterWiring and HullShape load them with those readers.
-FACTS = {'hull', 'thrusters'}
+# Profile sections that the team's code or astro reads but no hw.sh driver owns (hull: the boat outline;
+# thrusters: mhseals_hardware's load_config, which test_profiles' ThrusterWiring loads; astro: the astro CLI's
+# pointers to team files). astro_dock only echoes them, so the record leaves them out.
+FACTS = {'hull', 'thrusters', 'astro'}
 
 # The boat computers' permanent MACs, from their reservations (STATIC_LEASES: MAC=hostname=address ...).
 LEASES = re.search(r'^STATIC_LEASES="([^"]*)"', (Path(__file__).resolve().parents[1] / 'blastoise/network.env')
@@ -35,6 +35,7 @@ MACHINES = {
     'laptop-on-lan': ((), 'somelaptop', None, '192.168.0.57/24'),
     'laptop-off-lan': ((), 'somelaptop', None, ''),
     'laptop-squirtle': (('--vessel', 'squirtle'), 'somelaptop', None, ''),
+    'laptop-sim': (('--vessel', 'sim'), 'somelaptop', None, ''),
     'laptop-host-blastoise': (('--vessel', 'blastoise', '--host', 'somelaptop'), 'somelaptop', None, ''),
 }
 

@@ -1,0 +1,3 @@
+# The sim's one host: this machine (Unity, the device stack and astro all run here).
+hosts:
+  localhost: {roles: [boat_computer, operator], address: 127.0.0.1, ssh: false}
