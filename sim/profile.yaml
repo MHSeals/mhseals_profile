@@ -8,6 +8,7 @@ astro:
   state: ~/.config/mhseals/hardware_sim.yaml
   data: bags/sim
   sim: '${CRANE_DIR:-~/crane_ml}/Tools/RoboBoat/sim_up'   # the sim backend; astro exports this profile's env
+  field: {auto: false}   # sim runs file no automatic issues (astro issue still works)
   stacks:       # the sim backend already runs sensors, perception and Nav2 (device.launch device:=sim)
     sensors: {run: null, ready: [/odom/local]}
     perception: {run: null, ready: [/points, /front_camera/camera_info]}

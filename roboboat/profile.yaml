@@ -9,7 +9,11 @@ astro:
   check: ros2 run mhseals_hardware config_check   # validates state after apply
   events: /events
   data: null                                  # data dir: ASTRO_DATA unless a vessel sets one (workspace-relative)
-  sim: null                                   # sim backend command (`astro sim up|down|status`); the sim vessel sets it
+  sim: null                                   # sim backend command (`astro sim up|down|status|check`); the sim vessel sets it
+  help: ['${CRANE_DIR:-~/crane_ml}/help.yaml']   # more help.yaml groups: crane's verbs (astro crane doctor, ...)
+  bundle_next: 'next: astro crane fit {bundle}'  # printed after astro bundle
+  field: {repo: MHSeals/mhseals_field, url: 'https://github.com/MHSeals/mhseals_field.git',
+          dir: ~/.local/share/astro/field, auto: true}   # astro check/issue/sync/show; auto: issues from failures
   # The long-running stacks `astro up` starts, in this order, each on its host (registry host or role) in a
   # private tmux server or under setsid; up waits until the ready topics publish. run: null = started elsewhere.
   stacks:
