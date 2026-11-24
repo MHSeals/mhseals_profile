@@ -128,12 +128,12 @@ class ThrusterWiring(unittest.TestCase):
             for env in sorted(HERE.glob('*/network.env')):
                 with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
                         os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
-                    vessel.section.cache_clear()
+                    getattr(vessel.section, "cache_clear", lambda: None)()
                     config = configuration.load_config(empty.name)
                     wiring = yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('thrusters')
                     if wiring and 'channel_map' in wiring:
                         self.assertEqual(config['channel_map'], wiring['channel_map'])
-        vessel.section.cache_clear()
+        getattr(vessel.section, "cache_clear", lambda: None)()
 
 
 @unittest.skipUnless(TESTING or os.environ.get('REQUIRE_TESTING'), 'needs mhseals_testing on PYTHONPATH')
@@ -146,14 +146,14 @@ class HullShape(unittest.TestCase):
         for env in sorted(HERE.glob('*/network.env')):
             with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
                     os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
-                vessel.section.cache_clear()
+                getattr(vessel.section, "cache_clear", lambda: None)()
                 hull = hull or importlib.import_module('mhseals_testing.ui.minimap.hull')
                 shape = (yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('hull') or {}).get('shape')
                 if shape:
                     self.assertEqual(hull._settings()['shape'], shape)
                 else:
                     hull._settings()
-        vessel.section.cache_clear()
+        getattr(vessel.section, "cache_clear", lambda: None)()
 
 
 if __name__ == '__main__':
