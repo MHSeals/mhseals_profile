@@ -113,8 +113,9 @@ class ShippedProfiles(unittest.TestCase):
     def test_the_gateway_role_is_tranquility(self):
         """The Jetson's ssh hop is the `gateway` role (resolved-baseline.json); here that is tranquility."""
         hop = subprocess.run(['python3', '-I', str(ASTRO / 'devices/profile.py'), 'hosts',
-                              str(HERE / 'blastoise/devices.yaml'), 'gateway'], capture_output=True, text=True)
-        self.assertEqual(hop.stdout, 'tranquility\n', hop.stderr)
+                              str(HERE / 'blastoise/devices.yaml'), os.devnull, 'gateway'],
+                             capture_output=True, text=True)
+        self.assertEqual([row.split('\t')[0] for row in hop.stdout.splitlines()], ['tranquility'], hop.stderr)
 
 
 @unittest.skipUnless(configuration or os.environ.get('REQUIRE_HARDWARE'), 'needs mhseals_hardware on PYTHONPATH')
