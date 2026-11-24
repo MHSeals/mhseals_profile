@@ -5,6 +5,7 @@ astro:
   tests: mhseals_hardware/config/tests.yaml   # procedures (package-relative)
   bags:  mhseals_nav/config/bags.yaml         # bag presets
   state: ~/.config/mhseals/hardware.yaml      # what apply writes
+  state_env: MHSEALS_HARDWARE_CONFIG          # astro also exports the state path under this name (Nav2, hardware nodes)
   check: ros2 run mhseals_hardware config_check   # validates state after apply
   events: /events
   data: null                                  # data dir: ASTRO_DATA unless a vessel sets one (workspace-relative)
