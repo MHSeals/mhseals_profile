@@ -99,25 +99,9 @@ A point-to-point airMAX AC bridge on airOS 8.7.1. Both radios run network mode `
 | Frequency / width | 5165 MHz, 40 MHz | follows the AP |
 | Management address | static on `br0`, link-local alias on | static on `br0`, link-local alias on |
 
-`./hw.sh radio` uses `radio.yaml` (SSID, roles, MACs, default `cfg` keys) and `UBNT_*_IP`:
+`./hw.sh radio` (verbs in `./hw.sh radio --help`) uses `radio.yaml` and `UBNT_*_IP`. Never run a site survey: on airOS it leaves the channel and drops the link.
 
-| Verb | What it does |
-| --- | --- |
-| `verify [--via tranquility]` | read-only: ping and ARP each radio, ping the profile's reachable hosts, one UBNT discovery probe |
-| `status NAME` | read-only: `mca-status`, `wstalist`, `status.cgi`, radio/wireless keys (secrets dropped), uptime |
-| `snapshot NAME` | `/tmp/system.cfg` to `~/.local/state/astro_dock/ubiquiti/` (mode 600; also an airOS backup to upload) |
-| `plan NAME [KEY=VALUE ...]` | snapshot and diff only (= `apply --dry-run`) |
-| `apply NAME [KEY=VALUE ...]` | RAM-only trial after `APPLY`; reboots into the saved config after 300 s unless `KEEP` |
-| `rollback NAME` | ends a pending trial now (reboot into the saved config) |
-| `measure` | read-only: both radios' status, iperf3 TCP/UDP both ways to the boat computer with ping alongside; saved under `~/.local/state/astro_dock/link/` |
-| `propose [FILE]` | offline: setting changes per radio from the latest measurement, as `plan`/`apply` commands |
-
-`NAME` is `rocket` or `bullet`.
-
-- `apply` takes one radio at a time and refuses while the peer is unreachable or mid-trial. It refuses management-address and link-shared keys (change those in the airOS UI, far radio first). The AP's frequency, center, width and `ieee_mode` are allowed (the station follows), but not outside the station's scan list, and `KEEP` on such a trial needs the peer to answer.
-- `propose`: 40 MHz only at noise ≤ −88 dBm and SNR ≥ 25 dB, 20 MHz when noisy; a channel only from `propose.freq` (DFS flagged); polling on, PtP on the AP; ACK fixed for `propose.range_m`; power aimed at −65 to −50 dBm at the peer and raised only with `propose.txpower_max`; shaping off; existing keys only.
-- Never a site survey: on airOS it leaves the channel and drops the link. iperf3 runs on each host or in its `measure.container` and is never installed. Run from a boat-LAN host or set `UBNT_JUMP`.
-- **Recovery.** If a radio is unreachable at its LAN address, connect a host to the radio's PoE LAN port and browse to the link-local address that `verify` printed (give the host a `169.254.0.0/16` address). As a last resort, hold the reset button for about 10 s to restore factory defaults (`192.168.1.20`). Then upload the latest snapshot, or set the values in the table plus the WPA key, and run `verify`.
+**Recovery.** If a radio is unreachable at its LAN address, connect a host to the radio's PoE LAN port and browse to the link-local address that `verify` printed (give the host a `169.254.0.0/16` address). As a last resort, hold the reset button for about 10 s to restore factory defaults (`192.168.1.20`). Then upload the latest snapshot, or set the values in the table plus the WPA key, and run `verify`.
 
 ### Router
 
@@ -131,16 +115,9 @@ A Velodyne VLP16 (`VLP-16-A`, firmware 3.0.41.1) with a static address and no lo
 - `apply` validates, snapshots and after `APPLY` posts only the differing keys, then saves once. Netmask and gateway go last with a reset, which needs DHCP off, and must be active afterwards. It never moves the address. `rollback [SNAPSHOT]` re-applies a snapshot the same way.
 - Run from a boat-LAN host or set `LIDAR_JUMP=tranquility`. **Recovery:** no reset switch. Find it by `ip neigh` (its MAC) or its UDP source, put a host on that subnet, fix it in the web UI, Save Configuration, Reset System. Factory default `192.168.1.201/24`.
 
-VLP16 clouds (~642 KB) use a separate large-data DDS transport; TF, odometry and RViz use the default one. `mhseals_nav/config/fastdds_large_data.xml` (TCP, netmask filtering) is applied by `sensors.launch.py` to the Velodyne driver and transform only. `lidar_relay`, started by the hardware sensor launch, republishes a reduced 32 KiB `/points` on the normal transport for Nav2 and remote RViz; viewers just run `rviz2` in a container shell. To inspect full clouds on the sensor host, set `FASTRTPS_DEFAULT_PROFILES_FILE` and `FASTDDS_DEFAULT_PROFILES_FILE` to `$ROS_WS/install/share/mhseals_nav/config/fastdds_large_data.xml` in a dedicated shell.
+VLP16 clouds (~642 KB) use a separate large-data DDS transport; TF, odometry and RViz use the default one. `mhseals_nav/config/fastdds_large_data.xml` (TCP, netmask filtering) is applied by `sensors.launch.py` to the Velodyne driver and transform only. `lidar_relay`, started by mhseals_nav's `sensors.launch.py`, republishes a reduced 32 KiB `/points` on the normal transport for Nav2 and remote RViz; viewers just run `rviz2` in a container shell. To inspect full clouds on the sensor host, set `FASTRTPS_DEFAULT_PROFILES_FILE` and `FASTDDS_DEFAULT_PROFILES_FILE` to `$ROS_WS/install/share/mhseals_nav/config/fastdds_large_data.xml` in a dedicated shell.
 
-With hardware sensors and odometry running, start mapping and navigation on blastoise-odroid:
-
-```bash
-ros2 launch mhseals_nav slam.launch.py sim:=false
-ros2 launch mhseals_nav navigation.launch.py sim:=false use_lidar:=true
-```
-
-Check `ros2 topic hz /points` and `ros2 topic echo /map --once`; see the [mhseals_nav README](https://github.com/MHSeals/mhseals_nav#architecture) for the rest.
+For mapping and navigation see the [mhseals_nav README](https://github.com/MHSeals/mhseals_nav#architecture).
 
 ### Thrusters
 
