@@ -3,8 +3,6 @@
 ASTRO_DOCK is an astro_dock checkout (default: ../astro_dock, or the parent when this repo is its
 profiles/ submodule). Nothing is contacted: hostnames and NICs are faked.
 """
-import importlib
-import importlib.util
 import os
 import shutil
 from pathlib import Path
@@ -21,7 +19,6 @@ try:
     from mhseals_hardware import configuration, vessel     # the thruster driver's own reader (ROS-free)
 except ImportError:
     configuration = None
-TESTING = importlib.util.find_spec('mhseals_testing') is not None    # the TUI's hull: reader (needs numpy)
 
 HERE = Path(__file__).resolve().parents[1]
 CANDIDATES = [os.environ.get('ASTRO_DOCK'), HERE.parent, HERE.parent / 'astro_dock']
@@ -53,7 +50,7 @@ class ShippedProfiles(unittest.TestCase):
     def test_every_member_loads_and_each_vessel_kind_has_its_driver(self):
         run = self.hw('whoami')
         self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertIn('members blastoise:vessel control_station:station squirtle:vessel', run.stdout)
+        self.assertIn('members blastoise:vessel control_station:station sim:vessel squirtle:vessel', run.stdout)
         shown = yaml.safe_load(self.hw('profile', 'show', 'blastoise').stdout)
         for kind in set(shown) - {'profile', 'network_env', 'registry'} - FACTS:
             with self.subTest(kind=kind):
@@ -103,10 +100,10 @@ class ShippedProfiles(unittest.TestCase):
             run = self.hw('--host', host, 'hosts', 'repos')
             self.assertEqual(run.returncode, 0, run.stderr)
             return [line.split()[0] for line in run.stdout.splitlines()]
-        everyone = ['mhseals_hardware', 'mhseals_nav', 'mhseals_testing']
+        everyone = ['mhseals_hardware', 'mhseals_nav']
         self.assertEqual(repos('blastoise-odroid'), everyone)
         self.assertEqual(repos('blastoise-jetson'), everyone + ['direct_lidar_inertial_odometry'])
-        station = everyone + ['rviz-plugin-zed-od', 'zed-ros2-wrapper', 'mhseals_agents']
+        station = everyone + ['rviz-plugin-zed-od', 'zed-ros2-wrapper']
         self.assertEqual(repos('tranquility'), station)
         self.assertEqual(repos('somelaptop'), station)   # generic
 
@@ -134,26 +131,6 @@ class ThrusterWiring(unittest.TestCase):
                     wiring = yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('thrusters')
                     if wiring and 'channel_map' in wiring:
                         self.assertEqual(config['channel_map'], wiring['channel_map'])
-        getattr(vessel.section, "cache_clear", lambda: None)()
-
-
-@unittest.skipUnless(TESTING or os.environ.get('REQUIRE_TESTING'), 'needs mhseals_testing on PYTHONPATH')
-class HullShape(unittest.TestCase):
-    def test_every_vessels_hull_loads_with_the_tuis_reader(self):
-        """A bad hull: (unknown shape or key) stops the testing TUI at import, so it refuses here first."""
-        self.assertTrue(TESTING, 'REQUIRE_TESTING is set but mhseals_testing is not on PYTHONPATH')
-        from mhseals_hardware import vessel
-        hull = None
-        for env in sorted(HERE.glob('*/network.env')):
-            with self.subTest(vessel=env.parent.name), unittest.mock.patch.dict(
-                    os.environ, {'ASTRO_NETWORK_ENV': str(env)}):
-                getattr(vessel.section, "cache_clear", lambda: None)()
-                hull = hull or importlib.import_module('mhseals_testing.ui.minimap.hull')
-                shape = (yaml.safe_load((env.parent / 'profile.yaml').read_text()).get('hull') or {}).get('shape')
-                if shape:
-                    self.assertEqual(hull._settings()['shape'], shape)
-                else:
-                    hull._settings()
         getattr(vessel.section, "cache_clear", lambda: None)()
 
 

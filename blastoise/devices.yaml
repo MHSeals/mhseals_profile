@@ -1,13 +1,12 @@
-# Which computer has which role on the boat (the deployment layer of the device registry), over
-# mhseals_testing's package layer (its defaults and role profiles; ~/.config/mhseals/devices.yaml may add
-# `self:`). Per-host facts only: a host's login user, roles and address. Addresses are never written here:
+# Which computer has which role on the boat (the deployment layer of the device registry; ssh, deploy and
+# `astro on HOST` read it). Per-host facts only: a host's login user, roles and address. Addresses are never written here:
 # `$KEY` reads network.env, and a host without an address takes its STATIC_LEASES reservation (joined on
 # the host name). Each role reads as $<ROLE>_IP in this profile's YAMLs (astro_dock's hw.sh env). What
 # each role runs is mhseals_nav's config/devices/<profile>.yaml.
 hosts:
   blastoise-odroid: {roles: [boat_computer, time_server], user: roboboat, capabilities: [mavros, thrusters]}
   blastoise-jetson: {roles: [camera_host], user: roboboat, capabilities: [gpu, zed, lidar]}
-  tranquility: {roles: [operator, gateway], user: peace, address: $GATEWAY_IP}   # RTK base, operator heartbeat
+  tranquility: {roles: [operator, gateway], user: peace, address: $GATEWAY_IP}   # RTK base (USB), operator heartbeat
   router: {roles: [router], address: $ROUTER_IP, ssh: false}
   rocket: {roles: [radio], address: $UBNT_ROCKET_IP, ssh: false}
   bullet: {roles: [radio], address: $UBNT_BULLET_IP, ssh: false}
