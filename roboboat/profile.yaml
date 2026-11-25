@@ -37,7 +37,7 @@ astro:
       host: boat_computer
       run: ros2 launch mhseals_hardware drive.launch.py
       ready: [/command_mux/state, /thrusters/pwm]
-      needs: [localization]
+      needs: []                     # driver and mux need no odometry; the velocity controller's users (tests, trial) need localization
       default: true
       with: {controller: 'controller:=true'}
     nav:            # Nav2
