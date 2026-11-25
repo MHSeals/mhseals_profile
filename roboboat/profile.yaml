@@ -43,7 +43,7 @@ astro:
     nav:            # Nav2
       host: boat_computer
       run: ros2 launch mhseals_nav device.launch.py device:=odroid only:=navigation
-      ready: [/local_costmap/costmap]
+      ready: [/local_costmap/costmap_updates]   # the full grid is latched once (transient local); updates come every cycle
       needs: [localization]
       default: false
       with: {pool: 'preset:=pool', lake: 'preset:=lake'}   # mhseals_nav config/nav2_presets/<name>.yaml
