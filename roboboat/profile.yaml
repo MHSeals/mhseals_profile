@@ -46,7 +46,7 @@ astro:
       ready: [/local_costmap/costmap]
       needs: [localization]
       default: false
-      with: {}
+      with: {pool: 'preset:=pool', lake: 'preset:=lake'}   # mhseals_nav config/nav2_presets/<name>.yaml
     mapping:        # RTAB-Map
       host: boat_computer
       run: ros2 launch mhseals_nav device.launch.py device:=odroid only:=mapping
