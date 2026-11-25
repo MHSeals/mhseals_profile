@@ -11,6 +11,7 @@ astro:
   home: boat_computer                         # where test/rec/mark/apply/status/log/bundle run: a host shell without ROS forwards them there (--here: don't)
   data: null                                  # data dir: ASTRO_DATA unless a vessel sets one (workspace-relative)
   sim: null                                   # sim backend command (`astro sim up|down|status|check`); the sim vessel sets it
+  instance_env: null                          # the sim backend's instance variable (ASTRO_SIM_INSTANCE=N); the sim vessel sets it
   help: ['${CRANE_DIR:-~/crane_ml}/help.yaml']   # more help.yaml groups: crane's verbs (astro crane doctor, ...)
   bundle_next: 'next: astro crane fit {bundle}'  # printed after astro bundle
   test_needs: [localization, drive]   # stacks `astro test` starts first when down; a test's own needs in tests.yaml replace them

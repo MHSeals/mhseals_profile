@@ -8,6 +8,7 @@ astro:
   state: ~/.config/mhseals/hardware_sim.yaml
   data: bags/sim
   sim: '${CRANE_DIR:-~/crane_ml}/bin/crane sim'   # the sim backend; astro exports this profile's env
+  instance_env: CRANE_SIM_INSTANCE   # ASTRO_SIM_INSTANCE=N runs instance N (domain 101+N, container sim_up_ros_N)
   field: {auto: false}   # sim runs file no automatic issues (astro issue still works)
   stacks:       # the sim backend already runs localization, perception, Nav2 and mapping (device.launch device:=sim)
     localization: {run: null, ready: [/odom/local]}
