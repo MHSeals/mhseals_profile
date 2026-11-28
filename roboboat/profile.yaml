@@ -30,7 +30,7 @@ astro:
     perception:     # camera, objects, lidar and host_diagnostic
       host: camera_host
       run: ros2 launch mhseals_nav device.launch.py device:=jetson
-      ready: [/points, /front/zed_node/rgb/color/rect/camera_info]
+      ready: [/points, /front/zed_node/rgb/color/rect/camera_info, /perception/costmap_updates]   # what Nav2 reads (updates come every cycle; the full grid only on a move)
       needs: []
       default: true
       with: {}
@@ -45,7 +45,7 @@ astro:
       host: boat_computer
       run: ros2 launch mhseals_nav device.launch.py device:=odroid only:=navigation
       ready: [/local_costmap/costmap_updates]   # the full grid is latched once (transient local); updates come every cycle
-      needs: [localization]
+      needs: [localization, perception]   # its costmap holds only what /perception/costmap sends: without it Nav2 is blind
       default: false
       with: {pool: 'preset:=pool', lake: 'preset:=lake'}   # mhseals_nav config/nav2_presets/<name>.yaml
     mapping:        # RTAB-Map
